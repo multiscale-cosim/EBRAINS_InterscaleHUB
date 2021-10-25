@@ -45,7 +45,7 @@ def open_port_accept_connection(comm, root, info, path_to_files):
         fport = open(path_to_files, "w+")
         fport.write(port)
         fport.close()
-        pathlib.Path(path_to_files+'.unlock').touch()
+        #pathlib.Path(path_to_files+'.unlock').touch()
     else:
         port = None
     # control print to console.
@@ -54,9 +54,9 @@ def open_port_accept_connection(comm, root, info, path_to_files):
     sys.stdout.flush()
     
     port = comm.bcast(port,root)
-    print('InterscaleHub: Rank ' + str(comm.Get_rank()) + ' accepting connection on: ' + port)
+    print('InterscaleHub: Rank ' + str(comm.Get_rank()) + ' accepting connection on: ' + port);sys.stdout.flush()
     intra_comm = comm.Accept(port, info, root) 
-    print('InterscaleHub: Simulation client connected to' + str(intra_comm.Get_rank()))
+    print('InterscaleHub: Simulation client connected to' + str(intra_comm.Get_rank()));sys.stdout.flush()
     
     return intra_comm, port
 

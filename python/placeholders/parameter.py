@@ -38,9 +38,10 @@ class Parameter:
             "nb_synapses":10,
             "function_select":2}
         }
-        self.__nest_file = './tests/nest.txt' 
-        self.__tvb_file = './tests/tvb.txt'
-
+        # path to files containing the MPI port info
+        self.__nest_file = '../tests/test_nest_tvb/nest.txt' 
+        self.__tvb_file = '../tests/test_nest_tvb/tvb.txt'
+        
     def get_nest_path(self):
         return self.__nest_file
     
@@ -63,6 +64,6 @@ NOTE:
 list of other params, hardcoded in other classes
 - max_events set in interscale_hub.py
 - min_delay set in Simulation_mock.py
-
-
+- simulation params (ids, size) set in Simulation_mock.py line 168ff
+- tvb to nest params (size_list, list_id) set in pivot.py line 260ff
 '''

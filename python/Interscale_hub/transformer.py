@@ -11,14 +11,17 @@
 #       Team: Multi-scale Simulation and Design
 #
 # ------------------------------------------------------------------------------
-# 
 
+
+#TODO: This is a copy-paste of all the transformation and science from the usecase
+#TODO: It contains also some 'pivot' steps, e.g. raw buffer data spikes to spike-train
+#TODO: encapsulate this into transformer and science parts and make it suitable as plug-in
 import numpy as np
 import copy
-import logging
-# TODO: two science related imports -> proper encapsulation
+# science related imports
+# here elephant is imported and used
+from placeholders.science_rate_spike import rates_to_spikes
 from quantities import ms,Hz
-from python.placeholders.rate_spike import rates_to_spikes
 
 # TODO: proper NEST-TVB direction transformation and science
 def slidding_window(data,width):
@@ -43,32 +46,6 @@ class store_data:
         self.dt=param['resolution']              # the resolution of the integrator
         self.shape = (int(self.synch/self.dt),1) # the shape of the buffer/histogram
         self.hist = np.zeros(self.shape)         # the initialisation of the histogram
-    
-        '''
-        TODO: add proper logger
-        # configuration of the logger
-        level_log = param['level_log']
-        self.logger = logging.getLogger('store')
-        fh = logging.FileHandler(path+'/nest_to_tvb_science.log')
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh.setFormatter(formatter)
-        self.logger.addHandler(fh)
-        if level_log == 0:
-            fh.setLevel(logging.DEBUG)
-            self.logger.setLevel(logging.DEBUG)
-        elif  level_log == 1:
-            fh.setLevel(logging.INFO)
-            self.logger.setLevel(logging.INFO)
-        elif  level_log == 2:
-            fh.setLevel(logging.WARNING)
-            self.logger.setLevel(logging.WARNING)
-        elif  level_log == 3:
-            fh.setLevel(logging.ERROR)
-            self.logger.setLevel(logging.ERROR)
-        elif  level_log == 4:
-            fh.setLevel(logging.CRITICAL)
-            self.logger.setLevel(logging.CRITICAL)
-        '''
         
     def add_spikes(self,count,datas):
         """
@@ -91,10 +68,9 @@ class store_data:
         return hist_copy
 
 class analyse_data:
-    def __init__(self,path,param):
+    def __init__(self,param):
         """
         initialisation
-        :param path : the path for saving the logger file
         :param param : the parameters of analysis
         """
 
@@ -102,31 +78,6 @@ class analyse_data:
         self.synch = param['synch']                          # synchronize time between simulator
         self.buffer = np.zeros((self.width,))                  #initialisation/ previous result for a good result
         self.coeff = 1 / ( param['nb_neurons'] * param['resolution'] ) # for the mean firing rate in in KHZ
-        
-        '''
-        TODO: add proper logger
-        level_log = param['level_log']
-        self.logger = logging.getLogger('analyse')
-        fh = logging.FileHandler(path+'/nest_to_tvb_science.log')
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh.setFormatter(formatter)
-        self.logger.addHandler(fh)
-        if level_log == 0:
-            fh.setLevel(logging.DEBUG)
-            self.logger.setLevel(logging.DEBUG)
-        elif  level_log == 1:
-            fh.setLevel(logging.INFO)
-            self.logger.setLevel(logging.INFO)
-        elif  level_log == 2:
-            fh.setLevel(logging.WARNING)
-            self.logger.setLevel(logging.WARNING)
-        elif  level_log == 3:
-            fh.setLevel(logging.ERROR)
-            self.logger.setLevel(logging.ERROR)
-        elif  level_log == 4:
-            fh.setLevel(logging.CRITICAL)
-            self.logger.setLevel(logging.CRITICAL)
-        '''
         
     def analyse(self,count,hist):
         """
@@ -159,44 +110,17 @@ def toy_rates_to_spikes(rates,t_start,t_stop):
     return times
 
 class generate_data:
-    def __init__(self,nb_spike_generator,param):
+    def __init__(self,param):
         """
         generate spike train for each neurons
         :param path : path for the logger files
         :param nb_spike_generator: number of spike generator/neurons in each regions
         """
         self.percentage_shared = param['percentage_shared']  # percentage of shared rate between neurons
-        self.nb_spike_generator = nb_spike_generator         # number of spike generator
+        self.nb_spike_generator = param['nb_spike_generator']         # number of spike generator
         self.nb_synapse = param['nb_synapses']               # number of synapses by neurons
         self.function_translation = param['function_select'] # choose the function for the translation
-
         np.random.seed(param['seed'])
-        
-        '''
-        TODO: add proper logger
-        # configure the logger
-        level_log = param['level_log']
-        self.logger = logging.getLogger('generator')
-        fh = logging.FileHandler(path+'/tvb_to_nest_science.log')
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh.setFormatter(formatter)
-        self.logger.addHandler(fh)
-        if level_log == 0:
-            fh.setLevel(logging.DEBUG)
-            self.logger.setLevel(logging.DEBUG)
-        elif  level_log == 1:
-            fh.setLevel(logging.INFO)
-            self.logger.setLevel(logging.INFO)
-        elif  level_log == 2:
-            fh.setLevel(logging.WARNING)
-            self.logger.setLevel(logging.WARNING)
-        elif  level_log == 3:
-            fh.setLevel(logging.ERROR)
-            self.logger.setLevel(logging.ERROR)
-        elif  level_log == 4:
-            fh.setLevel(logging.CRITICAL)
-            self.logger.setLevel(logging.CRITICAL)
-        '''
         
     def generate_spike(self,count,time_step,rate):
         """
