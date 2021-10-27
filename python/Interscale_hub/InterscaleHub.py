@@ -57,16 +57,18 @@ class InterscaleHub:
         
         # TODO: logger placeholder for testing
         self.__logger = logging.getLogger(__name__)
+        self.__logger.info("Initialise...")
         
         # 1) param stuff, create IntercommManager
-        self.__logger.info("")
         self._init_params(param,direction)
         
         # 2) create buffer in self.__databuffer
         self._create_buffer()
+        self.__logger.info("Buffer created...")
         
         # 3) Data channel setup
         self._data_channel_setup()
+        self.__logger.info("data channels open and ready...")
 
 
     def start(self):
@@ -74,9 +76,10 @@ class InterscaleHub:
         1) init pivot objects depending on the usecase (direction)
         2) start pivot with INTRA communicator (M:N mapping)
         '''
+        self.__logger.info("Start data transfer and usecase science...")
         if self.__direction == 1:
             self.__pivot = piv.NestTvbPivot(
-                self.__param, 
+                self.__param,
                 self.__input_comm, 
                 self.__output_comm, 
                 self.__databuffer)
@@ -95,6 +98,7 @@ class InterscaleHub:
         Receive stop command.
         Call stop on the pivot operation loop (receiving and sending)
         '''
+        self.__logger.info("Stop InterscaleHub and disconnect...")
         self.__pivot.stop()
         self.__ic.close_and_finalize(self.__input_comm, self.__input_port)
         self.__ic.close_and_finalize(self.__output_comm, self.__output_port)

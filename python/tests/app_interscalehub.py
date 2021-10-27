@@ -13,7 +13,7 @@
 # ------------------------------------------------------------------------------
 
 import sys
-from Interscale_hub.interscale_hub import InterscaleHub
+from Interscale_hub.InterscaleHub import InterscaleHub
 from placeholders.parameter import Parameter
 
 def run_wrapper(args):
@@ -37,7 +37,6 @@ def run_wrapper(args):
     # 3) Stop signal
     # disconnect and close ports
     hub.stop()
-    stop = True
     
 if __name__ == '__main__':
     # args 1 = direction

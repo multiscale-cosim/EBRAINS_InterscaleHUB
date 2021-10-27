@@ -23,7 +23,10 @@ import copy
 from Interscale_hub.science import rates_to_spikes
 from quantities import ms,Hz
 
-# TODO: proper NEST-TVB direction transformation and science
+############
+# Transformation and Science for NEST-TVB direction
+############
+# TODO: proper transformation and science
 def slidding_window(data,width):
     """
     use for mean field
@@ -94,8 +97,10 @@ class analyse_data:
         return times,data*self.coeff
 
 
-
-# TODO: proper TVB-NEST direction transformation and science
+############
+# Transformation and Science for TVB-NEST direction
+############
+# TODO: proper transformation and science
 def toy_rates_to_spikes(rates,t_start,t_stop):
     # Can be changed to the function we had with elephant, this is just a toy function
     '''

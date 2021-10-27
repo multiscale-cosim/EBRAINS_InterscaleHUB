@@ -15,7 +15,7 @@
 from mpi4py import MPI
 import time
 import numpy as np
-import sys
+import logging
 
 #nest to tvb
 from Interscale_hub.transformer import store_data, analyse_data
@@ -35,6 +35,11 @@ class NestTvbPivot:
     def __init__(self, param, comm_receiver, comm_sender, databuffer):
         '''
         '''
+        
+        # TODO: logger placeholder for testing
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.info("Initialise...")
+        
         # Parameter for transformation and analysis
         self.__param = param
         # INTERcommunicator
@@ -193,6 +198,11 @@ class TvbNestPivot:
     def __init__(self, param, comm_receiver, comm_sender, databuffer):
         '''
         '''
+        
+        # TODO: logger placeholder for testing
+        self.__logger = logging.getLogger(__name__)
+        self.__logger.info("Initialise...")
+        
         # Parameter for transformation and analysis
         self.__param = param
         # INTERcommunicator
@@ -350,8 +360,8 @@ class TvbNestPivot:
         '''
         generator = generate_data(self.__param)
         # NOTE: count is a hardcoded '0'. Why?
-        # NOTE: time_step are the first two doubles in the buffer
-        # NOTE: rate is a double array, which size is stored in the second to last index
+        # time_step are the first two doubles in the buffer
+        # rate is a double array, which size is stored in the second to last index
         spikes_times = generator.generate_spike(0,
                                                 self.__databuffer[:2],
                                                 self.__databuffer[2:int(self.__databuffer[-2])])

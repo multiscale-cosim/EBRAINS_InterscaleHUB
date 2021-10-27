@@ -16,7 +16,13 @@ class Parameter:
     '''
     Parameter class.
     Hardcoded, without any error and safety handling.
-    Temporary -- TODO: include launcher and C&S environment.
+    NOTE: 
+    List of hardcoded parameter in the InterscaleHub (to be completed)
+    - max_events set in InterscaleHub.py
+    - min_delay set in Simulation_mock.py
+    - simulation params (ids, size) set in Simulation_mock.py
+    - tvb to nest params (size_list, list_id) set in pivot.py
+
     '''
     def __init__(self):
         '''
@@ -57,13 +63,3 @@ class Parameter:
         elif direction == 2:
             param = self.__parameter['param_tvb_to_nest']
         return param
-
-
-'''
-NOTE: 
-list of other params, hardcoded in other classes
-- max_events set in interscale_hub.py
-- min_delay set in Simulation_mock.py
-- simulation params (ids, size) set in Simulation_mock.py line 168ff
-- tvb to nest params (size_list, list_id) set in pivot.py line 260ff
-'''

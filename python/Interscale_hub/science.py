@@ -12,7 +12,8 @@
 #
 # ------------------------------------------------------------------------------
 
-# TODO:-> rate_spike.py from NEST-TVB usecase.
+# TODO: 
+# copied: rate_spike.py from NEST-TVB usecase.
 # implement properly as elephant science part
 # use both methods as Elephant plugin example!
 

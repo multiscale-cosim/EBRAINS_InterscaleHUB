@@ -11,6 +11,7 @@
 #       Team: Multi-scale Simulation and Design
 #
 # ------------------------------------------------------------------------------
+import sys
 
 import placeholders.Simulation_mock as mock
 from placeholders.parameter import Parameter
@@ -35,9 +36,9 @@ def run_wrapper(args):
     
     # 2) Start signal --> simulate or receive, depending on the direction
     if direction == 1:
-        tvb.simulate()
-    elif direction == 2:
         tvb.receive()
+    elif direction == 2:
+        tvb.simulate()
     
     # 3) Stop signal --> disconnect from hub
     tvb.disconnect_from_hub()
