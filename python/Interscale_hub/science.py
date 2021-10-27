@@ -1,6 +1,20 @@
-# TODO: PLACEHOLDER!!!
-# -> rate_spike.py from NEST-TVB usecase.
+# ------------------------------------------------------------------------------
+#  Copyright 2020 Forschungszentrum Jülich GmbH
+# "Licensed to the Apache Software Foundation (ASF) under one or more contributor
+#  license agreements; and to You under the Apache License, Version 2.0. "
+#
+# Forschungszentrum Jülich
+#  Institute: Institute for Advanced Simulation (IAS)
+#    Section: Jülich Supercomputing Centre (JSC)
+#   Division: High Performance Computing in Neuroscience
+# Laboratory: Simulation Laboratory Neuroscience
+#       Team: Multi-scale Simulation and Design
+#
+# ------------------------------------------------------------------------------
+
+# TODO:-> rate_spike.py from NEST-TVB usecase.
 # implement properly as elephant science part
+# use both methods as Elephant plugin example!
 
 from elephant.spike_train_generation import homogeneous_poisson_process, inhomogeneous_poisson_process
 from elephant.statistics import mean_firing_rate
@@ -97,3 +111,4 @@ if __name__=='__main__':
     5534.51652527, 7441.41998291, 7747.13668823, 8784.91744995, 9481.22253418,
     7909.23614502, 6691.65420532, 7793.50280762, 8774.40795898, 7772.98965454]*Hz, 7.1*ms ,10.5*ms,variation=True)
     print(res)
+ 

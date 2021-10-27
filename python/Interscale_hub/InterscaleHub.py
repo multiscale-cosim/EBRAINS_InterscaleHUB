@@ -14,12 +14,11 @@
 
 from mpi4py import MPI
 import numpy as np
-import copy
+import logging
 
 from placeholders.parameter import Parameter
 import Interscale_hub.pivot as piv
 import Interscale_hub.IntercommManager as icm
-#import placeholders.Intercomm_dummy as ic
 
 
 class InterscaleHub:
@@ -44,21 +43,23 @@ class InterscaleHub:
     - M:N:O mapping -> How many MPI ranks on the receiving simulation (O ranks)
     - multiple transformers, second pivot?
     
-    
     Stop:
-    - Call stop on the pivot operation and therefore the receiving and sending loop.
-    - NOTE: This is currently not bound to the simulation,
-        i.e. the actual simulation has stopped
+    - Call stop on the pivot operation (the receiving and sending loop).
+    - NOTE: This is currently not bound to the simulation, i.e. the actual simulation has stopped
     
     
     MVP: NEST-TVB cosim showcase
     '''
-    
     def __init__(self, param, direction):
         '''
         Init params, create buffer, open ports, accept connections
         '''
+        
+        # TODO: logger placeholder for testing
+        self.__logger = logging.getLogger(__name__)
+        
         # 1) param stuff, create IntercommManager
+        self.__logger.info("")
         self._init_params(param,direction)
         
         # 2) create buffer in self.__databuffer
@@ -66,18 +67,13 @@ class InterscaleHub:
         
         # 3) Data channel setup
         self._data_channel_setup()
-        
+
 
     def start(self):
         '''
-        InterscaleHub:
-        1) receive
-        2) pivot data from buffer (
+        1) init pivot objects depending on the usecase (direction)
+        2) start pivot with INTRA communicator (M:N mapping)
         '''
-        # start -> pivot, transform, analysis, transform, pivot
-        # pivot = split receiving ranks and transformer/sending ranks
-        # 
-        # stop -> loop with either interrupt or waiting for normal end/stop.
         if self.__direction == 1:
             self.__pivot = piv.NestTvbPivot(
                 self.__param, 
@@ -90,11 +86,8 @@ class InterscaleHub:
                 self.__input_comm, 
                 self.__output_comm, 
                 self.__databuffer)
-            
-        if self.__comm.Get_rank() == 0: # Receiver from input sim, rank 0
-            self.__pivot.receive()
-        else: #  Science/analyse and sender to TVB, rank 1-x
-            self.__pivot.send()
+        
+        self.__pivot.start(self.__comm)
         
 
     def stop(self):
@@ -102,19 +95,10 @@ class InterscaleHub:
         Receive stop command.
         Call stop on the pivot operation loop (receiving and sending)
         '''
-        
         self.__pivot.stop()
         self.__ic.close_and_finalize(self.__input_comm, self.__input_port)
         self.__ic.close_and_finalize(self.__output_comm, self.__output_port)
-        
-        '''
-        # Disconnect and close ports
-        print('InterscaleHUB: disconnect communicators and close ports...')
-        self.__input_comm.Disconnect()
-        self.__output_comm.Disconnect()
-        MPI.Close_port(self.__input_port)
-        MPI.Close_port(self.__output_port) 
-        '''
+
     
     def _create_buffer(self):
         '''
@@ -146,17 +130,18 @@ class InterscaleHub:
         '''
         self.__input_comm, self.__input_port = self.__ic.open_port_accept_connection(self.__input_path)
         self.__output_comm, self.__output_port = self.__ic.open_port_accept_connection(self.__output_path)
-        #self.__input_comm, self.__input_port = ic.open_port_accept_connection(self.__comm, self.__root, self.__info, self.__input_path)
-        #self.__output_comm, self.__output_port = ic.open_port_accept_connection(self.__comm, self.__root, self.__info, self.__output_path)
         
         
     def _init_params(self, p, direction):
         '''
-        Init MPI, buffer parameter and science parameter. 
-        The science parameter are taken from the TVB-NEST implementation
+        Init MPI stuff, buffer parameter and USECASE parameter.
+        
+        The USECASE parameter are taken from the TVB-NEST implementation
         in the co-sim github (refactored usecase from Lionel).
-        # TODO: MPI and buffer init needs to be here, but all parameter are passed through by the 
-        Launcher->Orchestrator->AppCompanion
+        
+        MPI and buffer initialisation is done here.
+        :param p: Parameters are passed through by the Launcher->Orchestrator->AppCompanion
+        :param direction: hardcoded 1 for NEST->TVB or 2 for TVB->NEST
         '''
         # MPI and IntercommManager
         self.__comm = MPI.COMM_WORLD  # INTRA communicator
@@ -168,12 +153,11 @@ class InterscaleHub:
         max_events = 1000000 # max. expected number of events per step
         self.__datasize = MPI.DOUBLE.Get_size()
         
-        # science parameter
+        # USECASE parameter
+        # TODO: self.__param used as global dict for now and passed all the way to pivot._analyse()
+        # align this with the rest of the implementation and below param init
         self.__direction = direction
-        # TODO: used as global param dict for now and passed all the way to pivot._analyse()
-        # TODO: align this with the rest of the implementation and below param init
         self.__param = p.get_param(direction)
-        
         # nest to tvb
         if direction == 1:
             self.__buffersize = max_events * 3 # 3 doubles per event

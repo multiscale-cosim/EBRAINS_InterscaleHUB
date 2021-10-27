@@ -14,13 +14,13 @@
 
 
 #TODO: This is a copy-paste of all the transformation and science from the usecase
-#TODO: It contains also some 'pivot' steps, e.g. raw buffer data spikes to spike-train
-#TODO: encapsulate this into transformer and science parts and make it suitable as plug-in
+#   - It contains also some 'pivot' steps, e.g. raw buffer data spikes to spike-train
+#   - encapsulate this into transformer and science parts and make it suitable as plug-in
+
 import numpy as np
 import copy
 # science related imports
-# here elephant is imported and used
-from placeholders.science_rate_spike import rates_to_spikes
+from Interscale_hub.science import rates_to_spikes
 from quantities import ms,Hz
 
 # TODO: proper NEST-TVB direction transformation and science

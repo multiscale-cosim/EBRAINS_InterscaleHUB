@@ -12,7 +12,6 @@
 #
 # ------------------------------------------------------------------------------
 
-import sys
 import placeholders.Simulation_mock as mock
 from placeholders.parameter import Parameter
 
@@ -23,43 +22,26 @@ def run_wrapper(args):
     # 2 --> tvb to nest
     p = Parameter()
     direction = int(args[1])
-    # param = p.get_param(direction)
-    stop = False
+        
+    #TODO: startet as subprocess by AppCompanion
+    # receive steering commands init,start,stop
+        
+    # 1) Simulation init
+    tvb = mock.TvbMock(p.get_tvb_path())
+    # NOTE: Meanwhile...the InterscaleHub is initialized
+    # Simulation connect
+    tvb.get_connection_details()
+    tvb.connect_to_hub()
     
-    while not (stop):
-        
-        #TODO: receive steering commands from AppCompanion
-        command = 1
-        
-        if command == 1:
-            # 1) Simulation init
-            tvb = mock.TvbMock(p.get_tvb_path())
-            
-            # NOTE: Meanwhile...the InterscaleHub is initialized
-            
-            # 2) Simulation connect
-            tvb.get_connection_details()
-            tvb.connect_to_hub()
-            
-            # 3) simulate or receive, depending on the direction
-            if direction == 1:
-                tvb.receive()
-            elif direction == 2:
-                tvb.simulate()
-            
-            # 4) Stop signal --> disconnect from hub
-            tvb.disconnect_from_hub()
-            stop = True
-        #elif command == 2:
-            # placeholder start
-            # if direction == 1:
-            #     tvb.receive()
-            # elif direction == 2:
-            #     tvb.simulate()
-        #elif command == 3:
-            # placeholder stop
-            # tvb.disconnect_from_hub()
-            # stop = True
+    # 2) Start signal --> simulate or receive, depending on the direction
+    if direction == 1:
+        tvb.simulate()
+    elif direction == 2:
+        tvb.receive()
+    
+    # 3) Stop signal --> disconnect from hub
+    tvb.disconnect_from_hub()
+
     
 if __name__ == '__main__':
     # args 1 = direction

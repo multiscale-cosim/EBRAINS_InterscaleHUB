@@ -1,8 +1,7 @@
 #!/bin/bash
 
-
+# temporary directories and files
 rm  -rd test_nest_tvb
-
 mkdir test_nest_tvb
 cp ./init_rates.npy  ./test_nest_tvb/init_rates.npy
 

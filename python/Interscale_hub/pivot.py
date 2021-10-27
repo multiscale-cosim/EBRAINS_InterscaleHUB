@@ -23,8 +23,8 @@ from Interscale_hub.transformer import store_data, analyse_data
 from Interscale_hub.transformer import generate_data
 
 
-# TODO: proper abstraction 
-# extract the usecase details from the general implementation
+# NestTvbPivot and TvbNestPivot classes:
+# TODO: proper abstraction -> extract the usecase details from the general implementation
 # -> incoming (receive) and outgoing (send) loops (M:N mapping)
 # -> the analyse (method) should be 
 #   a) pivot, as raw data to cosim data 
@@ -44,9 +44,29 @@ class NestTvbPivot:
         self.__num_sending = self.__comm_receiver.Get_remote_size()
         self.__num_receiving = self.__comm_sender.Get_remote_size()
         self.__databuffer = databuffer
-   
-   
-    def receive(self):
+    
+    
+    def start(self, intracomm):
+        '''
+        Start the pivot operation.
+        M:N mapping of MPI ranks, receive data, further process data.
+        
+        MVP: receive on rank 0, do the rest on rank 1.
+        '''
+        if intracomm.Get_rank() == 0: # Receiver from input sim, rank 0
+            self._receive()
+        else: #  Science/analyse and sender to TVB, rank 1-x
+            self._send()
+
+
+    def stop(self):
+        '''
+        TODO: proper execution of stop command
+        '''
+        self.__stop = True
+
+
+    def _receive(self):
         '''
         Receive data on rank 0. Put it into the shared mem buffer.
         Replaces the former 'receive' function.
@@ -97,7 +117,7 @@ class NestTvbPivot:
                 raise Exception("bad mpi tag"+str(status_.Get_tag()))
     
     
-    def send(self):
+    def _send(self):
         '''
         Send data to TVB (multiple MPI ranks possible).
         Replaces the former 'send' function.
@@ -119,7 +139,7 @@ class NestTvbPivot:
                     time.sleep(0.001)
                     pass
                 # TODO: All science/analysis here. Move to a proper place.
-                times,data = self._analyse(count)
+                times,data = self._transform(count)
                 
                 # Mark as 'ready to receive next simulation step'
                 self.__databuffer[-1] = 1
@@ -142,21 +162,10 @@ class NestTvbPivot:
             count+=1
         #logger.info('NEST_to_TVB: End of send function')
 
-
-    def stop(self):
-        '''
-        TODO: proper execution of stop command
-        '''
-        self.__stop = True
-        
     
-    def _analyse(self, count):
+    def _transform(self, count):
         '''
-        All analysis and science stuff in one place.
-        Done in three steps, that were previously disconnected.
-        Step 1 and 2 were done in the receiving thread, step 3 in the sending thread.
-        NOTE: All science and analysis is the same as before.
-        This contains the actual pivoting, transformation and analysis.
+        This step contains some pivoting, transformation and analysis.
         TODO: encapsulate
         :param count: Simulation iteration/step
         :return times, data: simulation times and the calculated rates
@@ -194,8 +203,28 @@ class TvbNestPivot:
         self.__num_receiving = self.__comm_sender.Get_remote_size()
         self.__databuffer = databuffer
 
-    
-    def receive(self):
+
+    def start(self, intracomm):
+        '''
+        Start the pivot operation.
+        M:N mapping of MPI ranks, receive data, further process data.
+        
+        MVP: receive on rank 0, do the rest on rank 1.
+        '''
+        if intracomm.Get_rank() == 0: # Receiver from input sim, rank 0
+            self._receive()
+        else: #  Science/analyse and sender to TVB, rank 1-x
+            self._send()
+
+
+    def stop(self):
+        '''
+        TODO: proper execution of stop command
+        '''
+        self.__stop = True
+
+
+    def _receive(self):
         '''
         Receive data on rank 0. Put it into the shared mem buffer.
         Replaces the former 'receive' function.
@@ -244,7 +273,7 @@ class TvbNestPivot:
         # logger.info('TVB_to_NEST: End of receive function')
 
 
-    def send(self):
+    def _send(self):
         '''
         Send data to NEST (multiple MPI ranks possible).
         Replaces the former 'send' function.
@@ -268,7 +297,7 @@ class TvbNestPivot:
                     pass
 
                 # TODO: All science/generate here. Move to a proper place.
-                spikes_times = self._analyse()
+                spikes_times = self._transform()
                 
                 # Mark as 'ready to receive next simulation step'
                 self.__databuffer[-1] = 1
@@ -314,16 +343,9 @@ class TvbNestPivot:
         # logger.info('TVB_to_NEST: End of send function')
 
 
-    def stop(self):
+    def _transform(self):
         '''
-        TODO: proper execution of stop command
-        '''
-        self.__stop = True
-
-
-    def _analyse(self):
-        '''
-        This contains the actual pivoting, transformation and analysis.
+        This step contains some pivoting, transformation and analysis.
         TODO: encapsulate
         '''
         generator = generate_data(self.__param)
