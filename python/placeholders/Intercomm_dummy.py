@@ -13,7 +13,7 @@
 # ------------------------------------------------------------------------------ 
 
 
-# TODO: use the abstrat class implementation from Muhammad Fahad's design.
+# TODO: use the implementation from Muhammad Fahad's design.
 # TODO: oop: create class, store port info in file (hardcoded)
 
 from mpi4py import MPI

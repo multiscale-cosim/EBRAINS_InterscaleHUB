@@ -12,23 +12,45 @@
 #
 # ------------------------------------------------------------------------------ 
 
-
-# TODO: multiplexing, exact pivot and transformer tasks, multiple transformers?, second pivot?
-
 from mpi4py import MPI
 import numpy as np
 import copy
 
 from placeholders.parameter import Parameter
-import placeholders.Intercomm_dummy as ic
 import Interscale_hub.pivot as piv
+import Interscale_hub.IntercommManager as icm
+#import placeholders.Intercomm_dummy as ic
 
 
 class InterscaleHub:
     '''
-    InterscaleHub for connecting the (two) simulators in cosim.
+    InterscaleHub for connecting cosim applications (two simulators).
+    MVP: Expose INIT, START, STOP functionality
     
-    MVP: init, start, stop functionality
+    Init:
+    - Parameter reading and initialisation
+    - Buffer creation, MPI shared memory, layout depending on the parameter
+    - Open MPi ports (write to file) and accept connections
+    - create (two) MPI intercommunicators, one for each applications
+    
+    Start:
+    - initialise the pivot operation
+    - start receive and send (data channels)
+    - TODO: multiplexing 
+    - proper M:N mapping of MPI ranks in the Pivot-operation
+        - How many MPI ranks on the sending simulation (M ranks)
+        - How many MPI ranks on the InterscaleHub (N ranks)
+        -> This contains: parallel buffer access, transformation, analysis and sending
+    - M:N:O mapping -> How many MPI ranks on the receiving simulation (O ranks)
+    - multiple transformers, second pivot?
+    
+    
+    Stop:
+    - Call stop on the pivot operation and therefore the receiving and sending loop.
+    - NOTE: This is currently not bound to the simulation,
+        i.e. the actual simulation has stopped
+    
+    
     MVP: NEST-TVB cosim showcase
     '''
     
@@ -36,19 +58,15 @@ class InterscaleHub:
         '''
         Init params, create buffer, open ports, accept connections
         '''
-        # 1) param stuff
+        # 1) param stuff, create IntercommManager
         self._init_params(param,direction)
-        
         
         # 2) create buffer in self.__databuffer
         self._create_buffer()
         
-        # 3) open ports and xreate intercomms
-        # self.__input_comm, self.__input_port
-        # and 
-        # self.__output_comm, self.__output_port 
-        self._open_ports_accept_connections()
-
+        # 3) Data channel setup
+        self._data_channel_setup()
+        
 
     def start(self):
         '''
@@ -61,34 +79,42 @@ class InterscaleHub:
         # 
         # stop -> loop with either interrupt or waiting for normal end/stop.
         if self.__direction == 1:
-            pivot = piv.NestTvbPivot(
+            self.__pivot = piv.NestTvbPivot(
                 self.__param, 
                 self.__input_comm, 
                 self.__output_comm, 
                 self.__databuffer)
         elif self.__direction == 2:
-            pivot = piv.TvbNestPivot(
+            self.__pivot = piv.TvbNestPivot(
                 self.__param, 
                 self.__input_comm, 
                 self.__output_comm, 
                 self.__databuffer)
             
         if self.__comm.Get_rank() == 0: # Receiver from input sim, rank 0
-            pivot._receive()
+            self.__pivot.receive()
         else: #  Science/analyse and sender to TVB, rank 1-x
-            pivot._send()
+            self.__pivot.send()
         
 
     def stop(self):
+        '''
+        Receive stop command.
+        Call stop on the pivot operation loop (receiving and sending)
+        '''
         
-        # TODO: see above -> set global variable and interrupt loop?
+        self.__pivot.stop()
+        self.__ic.close_and_finalize(self.__input_comm, self.__input_port)
+        self.__ic.close_and_finalize(self.__output_comm, self.__output_port)
+        
+        '''
         # Disconnect and close ports
         print('InterscaleHUB: disconnect communicators and close ports...')
         self.__input_comm.Disconnect()
         self.__output_comm.Disconnect()
         MPI.Close_port(self.__input_port)
         MPI.Close_port(self.__output_port) 
-
+        '''
     
     def _create_buffer(self):
         '''
@@ -108,17 +134,20 @@ class InterscaleHub:
         self.__databuffer = np.ndarray(buffer=buf, dtype='d', shape=(self.__buffersize,))
         
     
-    def _open_ports_accept_connections(self):
+    def _data_channel_setup(self):
         '''
-        Open port and 'register connection details'
-        i.e. write them to file.
+        Open ports and register connection details.
         Accept connection on ports and create INTER communicators.
         
-        input = incoming simulation data
-        output = outgoing simulation data
+        MVP: register = write port details to file.
+        MVP: Two connections 
+            - input = incoming simulation data
+            - output = outgoing simulation data
         '''
-        self.__input_comm, self.__input_port = ic.open_port_accept_connection(self.__comm, self.__root, self.__info, self.__input_path)
-        self.__output_comm, self.__output_port = ic.open_port_accept_connection(self.__comm, self.__root, self.__info, self.__output_path)
+        self.__input_comm, self.__input_port = self.__ic.open_port_accept_connection(self.__input_path)
+        self.__output_comm, self.__output_port = self.__ic.open_port_accept_connection(self.__output_path)
+        #self.__input_comm, self.__input_port = ic.open_port_accept_connection(self.__comm, self.__root, self.__info, self.__input_path)
+        #self.__output_comm, self.__output_port = ic.open_port_accept_connection(self.__comm, self.__root, self.__info, self.__output_path)
         
         
     def _init_params(self, p, direction):
@@ -129,10 +158,10 @@ class InterscaleHub:
         # TODO: MPI and buffer init needs to be here, but all parameter are passed through by the 
         Launcher->Orchestrator->AppCompanion
         '''
-        # MPI
+        # MPI and IntercommManager
         self.__comm = MPI.COMM_WORLD  # INTRA communicator
-        self.__info = MPI.INFO_NULL
         self.__root = 0 # hardcoded!
+        self.__ic = icm.IntercommManager(self.__comm, self.__root)
         
         # Buffer
         # TODO: needs to be a global cosim setting. more information needed!

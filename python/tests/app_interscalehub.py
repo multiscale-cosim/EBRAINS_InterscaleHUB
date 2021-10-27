@@ -22,35 +22,22 @@ def run_wrapper(args):
     # 2 --> tvb to nest
     param = Parameter()
     direction = int(args[1])
-    # param = p.get_param(direction)
-    stop = False
     
-    while not (stop):
-        
-        #TODO: receive steering commands from AppCompanion
-        command = 1
-        
-        if command == 1:
-            # 1) init InterscaleHUB
-            # includes param setup, buffer creation
-            hub = InterscaleHub(param, direction)
-            
-            
-            # 2) Start signal
-            # receive, pivot, transform, send
-            hub.start()
-            
-            # 3) Stop signal
-            # disconnect and close ports
-            hub.stop()
-            stop = True
-        #elif command == 2:
-            # placeholder start
-            # hub.start()
-        #elif command == 3:
-            # placeholder stop
-            # hub.stop()
-            # stop = True
+    #TODO: startet as subprocess by AppCompanion
+    # receive steering commands init,start,stop
+    
+    # 1) init InterscaleHUB
+    # includes param setup, buffer creation
+    hub = InterscaleHub(param, direction)
+    
+    # 2) Start signal
+    # receive, pivot, transform, send
+    hub.start()
+    
+    # 3) Stop signal
+    # disconnect and close ports
+    hub.stop()
+    stop = True
     
 if __name__ == '__main__':
     # args 1 = direction
