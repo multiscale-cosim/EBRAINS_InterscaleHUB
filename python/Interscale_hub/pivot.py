@@ -25,11 +25,14 @@ from Interscale_hub.transformer import generate_data
 
 # NestTvbPivot and TvbNestPivot classes:
 # TODO: proper abstraction -> extract the usecase details from the general implementation
+# -> Init, start, stop are pretty much the same every time
 # -> incoming (receive) and outgoing (send) loops (M:N mapping)
 # -> the analyse (method) should be 
 #   a) pivot, as raw data to cosim data 
 #   b) transform (might be trivial) and 
 #   c) analysis (might be trivial)
+
+# TODO: rework on the receive and send loops (both, general coding style and usecase specifics)
 
 class NestTvbPivot:
     def __init__(self, param, comm_receiver, comm_sender, databuffer):
