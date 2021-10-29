@@ -77,6 +77,7 @@ class InterscaleHub:
         2) start pivot with INTRA communicator (M:N mapping)
         '''
         self.__logger.info("Start data transfer and usecase science...")
+        # TODO: use enums
         if self.__direction == 1:
             self.__pivot = piv.NestTvbPivot(
                 self.__param,
@@ -97,6 +98,8 @@ class InterscaleHub:
         '''
         Receive stop command.
         Call stop on the pivot operation loop (receiving and sending)
+        
+        TODO: add error handling and fail checks
         '''
         self.__logger.info("Stop InterscaleHub and disconnect...")
         self.__pivot.stop()
@@ -117,6 +120,7 @@ class InterscaleHub:
         # rank 1-x: get a handle to it
         win = MPI.Win.Allocate_shared(bufbytes, self.__datasize, comm=self.__comm)
         buf, self.__datasize = win.Shared_query(0)
+        # TODO: add error handling and fail checks
         assert self.__datasize == MPI.DOUBLE.Get_size()
         # create a 1D numpy array (buffer) whose data points to the shared mem
         self.__databuffer = np.ndarray(buffer=buf, dtype='d', shape=(self.__buffersize,))
@@ -144,6 +148,10 @@ class InterscaleHub:
         in the co-sim github (refactored usecase from Lionel).
         
         MPI and buffer initialisation is done here.
+        
+        TODO: rework after defining the interfaces. 
+        -> parameter (config and science) passing and handling.
+        
         :param p: Parameters are passed through by the Launcher->Orchestrator->AppCompanion
         :param direction: hardcoded 1 for NEST->TVB or 2 for TVB->NEST
         '''
