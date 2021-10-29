@@ -43,6 +43,8 @@ class IntercommManager:
         Therefore only rank 0 opens the port and broadcasts the relevant info to all other ranks.
         This is necessary to avoid conflicts in the port file -> contains MPI-Rank infos
         
+        TODO: split up into 'open port' and 'accept connection'
+        
         :param path_to_files: location of the files 
         :return inter_comm: newly created intercommunicator
         :return port: specific port information
@@ -52,10 +54,10 @@ class IntercommManager:
             fport = open(path_to_files, "w+")
             fport.write(port)
             fport.close()
+            self.__logger.info("Port opened and file created:", path_to_files,
+                               "on rank",self.__comm.Get_rank())
         else:
             port = None
-        self.__logger.info("Port opened and file created:", path_to_files,
-            " -- I'm rank",self.__comm.Get_rank())
         port = self.__comm.bcast(port, self.__root) # avoid issues with mpi rank information.
         self.__logger.info('Rank ' + str(self.__comm.Get_rank()) + ' accepting connection on: ' + port)
         inter_comm = self.__comm.Accept(port, self.__info, self.__root) 
