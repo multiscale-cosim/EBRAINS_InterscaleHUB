@@ -15,6 +15,7 @@
 from mpi4py import MPI
 import numpy as np
 import logging
+import sys
 
 from placeholders.parameter import Parameter
 import Interscale_hub.pivot as piv
@@ -57,6 +58,11 @@ class InterscaleHub:
         
         # TODO: logger placeholder for testing
         self.__logger = logging.getLogger(__name__)
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.__logger.addHandler(handler)
+        self.__logger.setLevel(logging.DEBUG)
         self.__logger.info("Initialise...")
         
         # 1) param stuff, create IntercommManager

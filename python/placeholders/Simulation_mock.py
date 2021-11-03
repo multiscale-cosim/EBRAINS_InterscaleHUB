@@ -19,6 +19,7 @@ from mpi4py import MPI
 import os
 import time
 import logging
+import sys
 
 class SimulationMock:
     """
@@ -40,7 +41,7 @@ class SimulationMock:
 
     def get_connection_details(self):
         # Get connection info from file
-        self.__logger.info("Requesting connection details from",self.__path)
+        self.__logger.info("requesting connection details from {}".format(self.__path))
         while not os.path.exists(self.__path):
             self.__logger.info ("Port file not found yet, retry in 1 second")
             time.sleep(1)
@@ -50,9 +51,9 @@ class SimulationMock:
 
 
     def connect_to_hub(self):
-        self.__logger.info("Connecting to " + self.__port)
+        self.__logger.info("Connecting to {}".format(self.__port))
         self.__comm = MPI.COMM_WORLD.Connect(self.__port)
-        self.__logger.info("Connected to " + self.__port)
+        self.__logger.info("Connected to {}".format(self.__port))
 
 
     def disconnect_from_hub(self):
@@ -83,6 +84,11 @@ class NestMock:
         
         # TODO: logger placeholder for testing
         self.__logger = logging.getLogger(__name__)
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.__logger.addHandler(handler)
+        self.__logger.setLevel(logging.DEBUG)
         self.__logger.info("Initialise...")
         
         self.__path = path
@@ -95,7 +101,7 @@ class NestMock:
 
     def get_connection_details(self):
         # Get connection info from file
-        self.__logger.info("Requesting connection details from",self.__path)
+        self.__logger.info("requesting connection details from {}".format(self.__path))
         while not os.path.exists(self.__path):
             self.__logger.info ("Port file not found yet, retry in 1 second")
             time.sleep(1)
@@ -105,9 +111,9 @@ class NestMock:
 
 
     def connect_to_hub(self):
-        self.__logger.info("Connecting to " + self.__port)
+        self.__logger.info("Connecting to {}".format(self.__port))
         self.__comm = MPI.COMM_WORLD.Connect(self.__port)
-        self.__logger.info("Connected to " + self.__port)
+        self.__logger.info("Connected to {}".format(self.__port))
 
 
     def disconnect_from_hub(self):
@@ -141,7 +147,7 @@ class NestMock:
             self.__comm.Send([np.array([size*3],dtype='i'),1, MPI.INT], dest=status_.Get_source(), tag=0)
             self.__comm.Send([data,size*3, MPI.DOUBLE], dest=status_.Get_source(), tag=0)
             # results and go to the next run
-            self.__logger.info("NEST_OUTPUT: Rank",self.__comm.Get_rank(),"sent data of size",size)
+            self.__logger.info("NEST_OUTPUT: Rank {} sent data of size {}".format(self.__comm.Get_rank(),size))
             
             # ending the simulation step
             self.__comm.Send([np.array([True],dtype='b'), 1, MPI.CXX_BOOL], dest=0, tag=1)
@@ -168,12 +174,12 @@ class NestMock:
             # receive the number of spikes
             size=np.empty(11,dtype='i')
             self.__comm.Recv([size,11, MPI.INT], source=1, tag=ids[0],status=status_)
-            self.__logger.info("NEST_INPUT (" + str(ids[0]) + ") :receive size : " + str(size))
+            self.__logger.info("NEST_INPUT ({}):receive size : {}".format(ids[0],size))
             
             # receive the spikes for updating the spike detector
             data = np.empty(size[0], dtype='d')
             self.__comm.Recv([data,size[0], MPI.DOUBLE],source=1,tag=ids[0],status=status_)
-            self.__logger.info ("NEST_INPUT (" + str(id) + ") : " + str(np.sum(data)))
+            self.__logger.info ("NEST_INPUT ({}):receive size : {}".format(ids[0],np.sum(data)))
             
             # send end of sim step
             # NOTE: why?
@@ -197,6 +203,11 @@ class TvbMock:
         
         # TODO: logger placeholder for testing
         self.__logger = logging.getLogger(__name__)
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.__logger.addHandler(handler)
+        self.__logger.setLevel(logging.DEBUG)
         self.__logger.info("Initialise...")
         
         self.__path = path
@@ -209,7 +220,7 @@ class TvbMock:
 
     def get_connection_details(self):
         # Get connection info from file
-        self.__logger.info("requesting connection details from",self.__path)
+        self.__logger.info("requesting connection details from {}".format(self.__path))
         while not os.path.exists(self.__path):
             self.__logger.info("Port file not found yet, retry in 1 second")
             time.sleep(1)
@@ -219,9 +230,9 @@ class TvbMock:
 
 
     def connect_to_hub(self):
-        self.__logger.info("Connecting to " + self.__port)
+        self.__logger.info("Connecting to {}".format(self.__port))
         self.__comm = MPI.COMM_WORLD.Connect(self.__port)
-        self.__logger.info("Connected to " + self.__port)
+        self.__logger.info("Connected to {}".format(self.__port))
 
 
     def disconnect_from_hub(self):
@@ -253,13 +264,13 @@ class TvbMock:
             shape = np.array(data.shape[0],dtype='i') # size of data
             times = np.array([starting,starting+self.__min_delay],dtype='d') # time of stating and ending step
             
-            self.__logger.info("TVB_OUTPUT: sending timestep : " +str(times))
+            self.__logger.info("TVB_OUTPUT: sending timestep {}".format(times))
             self.__comm.Send([times,MPI.DOUBLE],dest=source,tag=0)
             
-            self.__logger.info("TVB_OUTPUT: sending shape : " +str(shape))
+            self.__logger.info("TVB_OUTPUT: sending shape : {}".format(shape))
             self.__comm.Send([shape,MPI.INT],dest=source,tag=0)
             
-            self.__logger.info("TVB_OUTPUT: sending data : " +str(np.sum(np.sum(data))))
+            self.__logger.info("TVB_OUTPUT: sending data : {}".format(np.sum(np.sum(data))))
             self.__comm.Send([data, MPI.DOUBLE], dest=source, tag=0)
             
             starting+=self.__min_delay
@@ -272,7 +283,7 @@ class TvbMock:
             req = self.__comm.irecv(source=0,tag=0)
             accept = req.wait(status_)
 
-        self.__logger.info("TVB_OUTPUT: sending timestep : " +str(times))
+        self.__logger.info("TVB_OUTPUT: sending timestep : {}".format(times))
         self.__comm.Send([times, MPI.DOUBLE], dest=0, tag=1)
         
         self.__logger.info("TVB_OUTPUT: end of simulation" )
@@ -299,7 +310,8 @@ class TvbMock:
             
             # summary of the data
             if status_.Get_tag() == 0:
-                self.__logger.info("TVB_INPUT:",self.__comm.Get_rank(),"received timestep", times, "and rates",np.sum(rates))
+                self.__logger.info("TVB_INPUT:{} received timestep {} and rates {}"
+                                   .format(self.__comm.Get_rank(),times,np.sum(rates)))
             else:
                 break
             if times[1] >9900:
