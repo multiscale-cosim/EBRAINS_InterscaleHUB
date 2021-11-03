@@ -16,6 +16,7 @@ from mpi4py import MPI
 import time
 import numpy as np
 import logging
+import sys
 
 #nest to tvb
 from Interscale_hub.transformer import store_data, analyse_data

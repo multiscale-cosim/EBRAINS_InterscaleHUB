@@ -19,6 +19,7 @@ from mpi4py import MPI
 import os
 import time
 import logging
+import sys
 
 class SimulationMock:
     """

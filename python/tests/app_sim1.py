@@ -22,7 +22,7 @@ def run_wrapper(args):
     # 1 --> nest to Tvb
     # 2 --> tvb to nest
     p = Parameter()
-    direction = int(args)
+    direction = int(args) # NOTE: will be changed
     
     #TODO: startet as subprocess by AppCompanion
     # receive steering commands init,start,stop
