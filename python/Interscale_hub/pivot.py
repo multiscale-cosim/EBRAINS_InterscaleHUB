@@ -41,7 +41,6 @@ class NestTvbPivot:
         '''
         
         # TODO: logger placeholder for testing
-        import sys
         self.__logger = logging.getLogger(__name__)
         handler = logging.StreamHandler(sys.stdout)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
