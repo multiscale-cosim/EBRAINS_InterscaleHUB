@@ -21,7 +21,7 @@ def run_wrapper(args):
     # 1 --> nest to Tvb
     # 2 --> tvb to nest
     param = Parameter()
-    direction = int(args[1])
+    direction = int(args)
     
     #TODO: startet as subprocess by AppCompanion
     # receive steering commands init,start,stop
@@ -40,4 +40,4 @@ def run_wrapper(args):
     
 if __name__ == '__main__':
     # args 1 = direction
-    sys.exit(run_wrapper(sys.argv))
+    sys.exit(run_wrapper(sys.argv[1]))
