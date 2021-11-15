@@ -12,38 +12,39 @@
 #
 # ------------------------------------------------------------------------------
 import sys
-
 import placeholders.Simulation_mock as mock
 from placeholders.parameter import Parameter
+from python.Application_Companion.common_enums import SteeringCommands
+from mock_simulator_wrapper import MockWrapper
 
 
-def run_wrapper(args):
-    # direction
-    # 1 --> nest to Tvb
-    # 2 --> tvb to nest
-    p = Parameter()
-    direction = int(args) # NOTE: will be changed
-        
-    #TODO: startet as subprocess by AppCompanion
-    # receive steering commands init,start,stop
-        
-    # 1) Simulation init
-    tvb = mock.TvbMock(p.get_tvb_path())
-    # NOTE: Meanwhile...the InterscaleHub is initialized
-    # Simulation connect
-    tvb.get_connection_details()
-    tvb.connect_to_hub()
-    
-    # 2) Start signal --> simulate or receive, depending on the direction
-    if direction == 1:
-        tvb.receive()
-    elif direction == 2:
-        tvb.simulate()
-    
-    # 3) Stop signal --> disconnect from hub
-    tvb.disconnect_from_hub()
-
-    
 if __name__ == '__main__':
-    # args 1 = direction
-    sys.exit(run_wrapper(sys.argv[1]))
+    '''mock for TVB simulation with steering support.'''
+    # initialize parameters
+    parameters = Parameter()
+    # instantiate TVB mock simulator
+    tvb = mock.TvbMock(parameters.get_tvb_path())
+    # set direction to the parameter received via Popen subprocess
+    direction = sys.argv[1]  # TODO validate the args
+
+    # STEP 1. INIT steering action
+    # NOTE INIT is a system action and so is done implicitly when initializes
+    # the simulator
+
+    # instantiate the wrapper. and initialize the simulator
+    simulator_wrapper = MockWrapper(direction, tvb)
+
+    # STEP 2. START steering command
+    # receive steering command from Application Manager via (stdin) PIPE
+    user_action_command = input()
+    # execute if steering command is START
+    if SteeringCommands[user_action_command] == SteeringCommands.START:
+        simulator_wrapper.execute_start_command()
+        sys.exit(0)
+    else:
+        # TODO raise and log the exception with traceback and terminate with
+        # error if received an unknown steering command
+        print(f'unknown steering command: '
+              f'{SteeringCommands[user_action_command]}',
+              file=sys.stderr)
+        sys.exit(1)

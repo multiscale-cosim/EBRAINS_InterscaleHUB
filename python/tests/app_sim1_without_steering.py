@@ -13,31 +13,35 @@
 # ------------------------------------------------------------------------------
 
 import sys
-from Interscale_hub.InterscaleHub import InterscaleHub
+import placeholders.Simulation_mock as mock 
 from placeholders.parameter import Parameter
 
+
 def run_wrapper(args):
-    # print(f'****************input from pipe:{input()}')
     # direction
     # 1 --> nest to Tvb
     # 2 --> tvb to nest
-    param = Parameter()
+    p = Parameter()
     direction = int(args) # NOTE: will be changed
+    
+    #TODO: startet as subprocess by AppCompanion
     # receive steering commands init,start,stop
+        
+    # 1) Simulation init
+    nest = mock.NestMock(p.get_nest_path())
+    # NOTE: Meanwhile...the InterscaleHub is initialized
+    # Simulation connect
+    nest.get_connection_details()
+    nest.connect_to_hub()
     
-    # 1) init InterscaleHUB
-    # includes param setup, buffer creation
-    hub = InterscaleHub(param, direction)
+    # 2) Start signal --> simulate or receive, depending on the direction
+    if direction == 1:
+        nest.simulate()
+    elif direction == 2:
+        nest.receive()
     
-    # 2) Start signal
-    # receive, pivot, transform, send
-    hub.start()
-    
-    # 3) Stop signal
-    # disconnect and close ports
-    hub.stop()
-
-    
+    # 3) Stop signal --> disconnect from hub
+    nest.disconnect_from_hub()
+        
 if __name__ == '__main__':
-    # args 1 = direction
     sys.exit(run_wrapper(sys.argv[1]))

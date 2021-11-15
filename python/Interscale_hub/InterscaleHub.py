@@ -66,9 +66,11 @@ class InterscaleHub:
         self.__logger.info("Initialise...")
         
         # 1) param stuff, create IntercommManager
+        self.__logger.debug("Init Params...")
         self._init_params(param,direction)
         
         # 2) create buffer in self.__databuffer
+        self.__logger.debug("Creating Buffer...")
         self._create_buffer()
         self.__logger.info("Buffer created...")
         
@@ -124,7 +126,9 @@ class InterscaleHub:
             bufbytes= 0
         # rank 0: create the shared block
         # rank 1-x: get a handle to it
+        self.__logger.debug("allocating shared...")
         win = MPI.Win.Allocate_shared(bufbytes, self.__datasize, comm=self.__comm)
+        self.__logger.debug("buf, and datasize...")
         buf, self.__datasize = win.Shared_query(0)
         # TODO: add error handling and fail checks
         assert self.__datasize == MPI.DOUBLE.Get_size()
