@@ -1,1 +1,3 @@
-Test if git submodules work correctly
+Test if git submodules work correctly.
+
+Test access from VM
