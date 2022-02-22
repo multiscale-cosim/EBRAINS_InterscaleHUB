@@ -14,8 +14,6 @@
 
 from mpi4py import MPI
 import logging
-import sys
-import pathlib
 
 class IntercommManager:
     '''
@@ -34,13 +32,9 @@ class IntercommManager:
         
         # TODO: logger placeholder for testing
         self.__logger = logging.getLogger(__name__)
-        handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        self.__logger.addHandler(handler)
-        self.__logger.setLevel(logging.DEBUG)
-    
-    def open_port_accept_connection(self, paths):
+
+
+    def open_port_accept_connection(self, path_to_files):
         '''
         Opens a port and writes the details to file.
         Accepts connection on the port.
@@ -55,23 +49,18 @@ class IntercommManager:
         :return inter_comm: newly created intercommunicator
         :return port: specific port information
         '''
-        comm = MPI.COMM_SELF
-        root = 0
-        #if self.__comm.Get_rank() == self.__root:
-        # Write file configuration of the port
-        port = MPI.Open_port(self.__info)
-        for path in paths:
-            fport = open(path, "w+")
+        if self.__comm.Get_rank() == self.__root:
+            port = MPI.Open_port(self.__info)
+            fport = open(path_to_files, "w+")
             fport.write(port)
             fport.close()
-            pathlib.Path(path + '.unlock').touch()
-                # self.__logger.info("Port opened and file created:" + path +
-                #             "on rank" + str(self.__comm.Get_rank()))
-        #else:
-        #    port = None
-        #port = self.__comm.bcast(port, self.__root) # avoid issues with mpi rank information.
+            self.__logger.info("Port opened and file created:", path_to_files,
+                               "on rank",self.__comm.Get_rank())
+        else:
+            port = None
+        port = self.__comm.bcast(port, self.__root) # avoid issues with mpi rank information.
         self.__logger.info('Rank ' + str(self.__comm.Get_rank()) + ' accepting connection on: ' + port)
-        inter_comm = comm.Accept(port, self.__info, root) 
+        inter_comm = self.__comm.Accept(port, self.__info, self.__root) 
         self.__logger.info('Simulation client connected to' + str(inter_comm.Get_rank()))
         
         return inter_comm, port
