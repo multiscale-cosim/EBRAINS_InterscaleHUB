@@ -101,6 +101,15 @@ class NestTvbPivot:
         count = 0
         status_ = MPI.Status()
         self.__logger.info("reading from buffer")
+        
+        ###########################################################
+        import os
+        from python.Application_Companion.common_enums import INTEGRATED_SIMULATOR_APPLICATION as SIMULATOR
+        pid_and_local_minimum_step_size = \
+        {SIMULATOR.PID.name: os.getpid(),
+        SIMULATOR.LOCAL_MINIMUM_STEP_SIZE.name: 0.0}
+        print(f'{pid_and_local_minimum_step_size}')
+        ###########################################################
         # self.__logger.info("NESTtoTVB -- consumer/receiver -- Rank:"+str(self.__comm_receiver.Get_rank()))
         while True:
             head_ = 0 # head of the buffer, reset after each iteration            
@@ -236,7 +245,7 @@ class TvbNestPivot:
         self.__logger.addHandler(handler)
         self.__logger.setLevel(logging.DEBUG)
         self.__logger.info("Initialise...")
-        
+
         # Parameter for transformation and analysis
         self.__param = param
         # INTERcommunicator
@@ -329,6 +338,17 @@ class TvbNestPivot:
         check = np.empty(1,dtype='b')
         size_list = np.empty(1, dtype='i')
         id_first_spike_detector = self.__param['id_first_spike_detector']
+
+
+        ###########################################################
+        import os
+        from python.Application_Companion.common_enums import INTEGRATED_SIMULATOR_APPLICATION as SIMULATOR
+        pid_and_local_minimum_step_size = \
+        {SIMULATOR.PID.name: os.getpid(),
+        SIMULATOR.LOCAL_MINIMUM_STEP_SIZE.name: 0.0}
+        print(f'{pid_and_local_minimum_step_size}')
+        ###########################################################
+        
         while True:
             # TODO: This is still not correct. We only check for the Tag of the last rank.
             # IF all ranks send always the same tag in one iteration (simulation step)

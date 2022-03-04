@@ -49,6 +49,7 @@ class Parameter:
                 "width": 20.0,
                 "id_first_spike_detector": 229
         }
+
         # path to files containing the MPI port info
         # NOTE these files contain the ids of spike detector(s) and spike generators
         self.__nest_to_tvb_port_file = "/home/vagrant/multiscale-cosim-repos/TVB-NEST-demo/result_sim/co-simulation/nest/spike_detector.txt"
