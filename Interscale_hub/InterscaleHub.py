@@ -19,9 +19,9 @@ import sys
 import os
 import time
 
-from Interscale_hub.parameter import Parameter
-import Interscale_hub.pivot as piv
-import Interscale_hub.IntercommManager as icm
+from EBRAINS_InterscaleHUB.Interscale_hub.parameter import Parameter
+import EBRAINS_InterscaleHUB.Interscale_hub.pivot as piv
+import EBRAINS_InterscaleHUB.Interscale_hub.IntercommManager as icm
 
 
 class InterscaleHub:

@@ -19,9 +19,9 @@ import logging
 import sys
 
 #nest to tvb
-from Interscale_hub.transformer import store_data, analyse_data, spiketorate
+from EBRAINS_InterscaleHUB.Interscale_hub.transformer import store_data, analyse_data, spiketorate
 #tvb to nest
-from Interscale_hub.transformer import generate_data
+from EBRAINS_InterscaleHUB.Interscale_hub.transformer import generate_data
 
 
 # NestTvbPivot and TvbNestPivot classes:
@@ -104,7 +104,7 @@ class NestTvbPivot:
         
         ###########################################################
         import os
-        from python.Application_Companion.common_enums import INTEGRATED_SIMULATOR_APPLICATION as SIMULATOR
+        from EBRAINS_RichEndpoint.Application_Companion.common_enums import INTEGRATED_SIMULATOR_APPLICATION as SIMULATOR
         pid_and_local_minimum_step_size = \
         {SIMULATOR.PID.name: os.getpid(),
         SIMULATOR.LOCAL_MINIMUM_STEP_SIZE.name: 0.0}
@@ -342,7 +342,7 @@ class TvbNestPivot:
 
         ###########################################################
         import os
-        from python.Application_Companion.common_enums import INTEGRATED_SIMULATOR_APPLICATION as SIMULATOR
+        from EBRAINS_RichEndpoint.Application_Companion.common_enums import INTEGRATED_SIMULATOR_APPLICATION as SIMULATOR
         pid_and_local_minimum_step_size = \
         {SIMULATOR.PID.name: os.getpid(),
         SIMULATOR.LOCAL_MINIMUM_STEP_SIZE.name: 0.0}

@@ -23,7 +23,7 @@ import copy
 import logging
 import sys
 # science related imports
-from Interscale_hub.science import rates_to_spikes
+from EBRAINS_InterscaleHUB.Interscale_hub.science import rates_to_spikes
 from elephant.spike_train_generation import inhomogeneous_poisson_process
 from quantities import ms,Hz
 from neo.core import SpikeTrain, AnalogSignal
