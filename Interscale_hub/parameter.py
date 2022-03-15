@@ -33,7 +33,7 @@ class Parameter:
         path_file = os.path.dirname(__file__)
         self.__parameter = {
                 "co_simulation": True,
-                "path": "/home/vagrant/multiscale-cosim-repos/TVB-NEST-usecase1/cosim_example_demos/result_sim/co-simulation/",
+                "path": "/home/vagrant/multiscale-cosim-repos/TVB-NEST-usecase1/result_sim/co-simulation/",
                 "simulation_time": 1000.0,
                 "level_log": 1,
                 "resolution": 0.1,
