@@ -17,11 +17,14 @@ import logging
 import sys
 import pathlib
 
+from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
+
+
 class IntercommManager:
     '''
     NOTE: use the implementation from Muhammad Fahad's design.
     '''
-    def __init__(self, comm, root):
+    def __init__(self, comm, root, configurations_manager, log_settings):
         '''
         General MPI Server-Client connection.
 
@@ -31,14 +34,13 @@ class IntercommManager:
         self.__comm = comm
         self.__root = root
         self.__info = MPI.INFO_NULL
-        
-        # TODO: logger placeholder for testing
-        self.__logger = logging.getLogger(__name__)
-        handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        self.__logger.addHandler(handler)
-        self.__logger.setLevel(logging.DEBUG)
+        self._log_settings = log_settings
+        self._configurations_manager = configurations_manager
+        self.__logger = self._configurations_manager.load_log_configurations(
+                                        name="IntercommManager",
+                                        log_configurations=self._log_settings,
+                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)
+        self.__logger.info("Initialised")
     
     def open_port_accept_connection(self, paths):
         '''
