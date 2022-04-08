@@ -22,6 +22,7 @@ import time
 from EBRAINS_InterscaleHUB.Interscale_hub.parameter import Parameter
 import EBRAINS_InterscaleHUB.Interscale_hub.pivot as piv
 import EBRAINS_InterscaleHUB.Interscale_hub.IntercommManager as icm
+from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
 
 class InterscaleHub:
@@ -53,18 +54,17 @@ class InterscaleHub:
     
     MVP: NEST-TVB cosim showcase
     '''
-    def __init__(self, param, direction):
+    def __init__(self, param, direction, configurations_manager, log_settings):
         '''
         Init params, create buffer, open ports, accept connections
         '''
         
-        # TODO: logger placeholder for testing
-        self.__logger = logging.getLogger(__name__)
-        handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        self.__logger.addHandler(handler)
-        self.__logger.setLevel(logging.DEBUG)
+        self._log_settings = log_settings
+        self.__configurations_manager = configurations_manager
+        self.__logger = self.__configurations_manager.load_log_configurations(
+                                        name="InterscaleHub",
+                                        log_configurations=self._log_settings,
+                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)
         self.__logger.info("Initialise...")
         
         # 1) param stuff, create IntercommManager
@@ -94,14 +94,18 @@ class InterscaleHub:
                 self.__param,
                 self.__input_comm, 
                 self.__output_comm, 
-                self.__databuffer)
+                self.__databuffer,
+                self.__configurations_manager,
+                 self._log_settings)
         elif self.__direction == 2:
             self.__pivot = piv.TvbNestPivot(
                 self.__comm,
                 self.__param, 
                 self.__input_comm, 
                 self.__output_comm, 
-                self.__databuffer)
+                self.__databuffer,
+                self.__configurations_manager,
+                self._log_settings)
         self.__pivot.start(self.__comm)
         
 
@@ -126,11 +130,7 @@ class InterscaleHub:
                     self.__ic.close_and_finalize(self.__output_comm, self.__output_port)
                 else:
                     self.__ic.close_and_finalize(self.__input_comm, self.__input_port)
-
-        
-
-
-    
+ 
     def _create_buffer(self):
         '''
         Create shared memory buffer. MPI One-sided-Communication.
@@ -185,11 +185,11 @@ class InterscaleHub:
         id_transformer = 0
         if self.__direction  == 1:    
             # get information from NEST
-            while not os.path.exists(path + 'nest/spike_detector.txt.unlock'):
+            while not os.path.exists(path + '/nest/spike_detector.txt.unlock'):
                 # self.__logger.info("DEBUG==>1 PATH: " + path)
                 self.__logger.info("spike detector ids not found yet, retry in 1 second")
                 time.sleep(1)
-            spike_detector = np.loadtxt(path + 'nest/spike_detector.txt', dtype=int)
+            spike_detector = np.loadtxt(path + '/nest/spike_detector.txt', dtype=int)
             # case of one spike detector
             try:
                 spike_detector = np.array([int(spike_detector)])
@@ -197,17 +197,17 @@ class InterscaleHub:
                 pass
 
             id_spike_detector = spike_detector[id_transformer]
-            path_to_spike_detector = [path + "transformation/spike_detector/" + str(id_spike_detector) + ".txt"]
+            path_to_spike_detector = [path + "/transformation/spike_detector/" + str(id_spike_detector) + ".txt"]
             # TVB_recev_file = "/transformation/send_to_tvb/" + str(id_proxy[id_transformer]) + ".txt"
             # id_spike_detector = os.path.splitext(os.path.basename(path + file_spike_detector))[0]
             return path_to_spike_detector
 
         elif self.__direction == 2:
-            while not os.path.exists(path + 'nest/spike_generator.txt.unlock'):
+            while not os.path.exists(path + '/nest/spike_generator.txt.unlock'):
                 # self.__logger.info("DEBUG==>2 PATH: " + path)
                 self.__logger.info("spike generator ids not found yet, retry in 1 second")
                 time.sleep(1)
-            spike_generator = np.loadtxt(path + 'nest/spike_generator.txt', dtype=int)
+            spike_generator = np.loadtxt(path + '/nest/spike_generator.txt', dtype=int)
             # case of one spike generator
             try:
                 if len(spike_generator.shape) < 2:
@@ -223,7 +223,7 @@ class InterscaleHub:
             path_to_spike_generators = []
             for i in range(nb_spike_generator):
                 # write file with port and unlock
-                running_path = os.path.join(path + "transformation/spike_generator/",
+                running_path = os.path.join(path + "/transformation/spike_generator/",
                                                 str(id_first_spike_generator + i) + ".txt")
                 path_to_spike_generators.append(running_path)
             # create path for receive from TVB
@@ -248,7 +248,11 @@ class InterscaleHub:
         # MPI and IntercommManager
         self.__comm = MPI.COMM_WORLD  # INTRA communicator
         self.__root = 0 # hardcoded!
-        self.__ic = icm.IntercommManager(self.__comm, self.__root)
+        self.__ic = icm.IntercommManager(
+            self.__comm,
+            self.__root,
+            self.__configurations_manager,
+            self._log_settings)
         
         # Buffer
         # TODO: needs to be a global cosim setting. more information needed!
@@ -279,7 +283,7 @@ class InterscaleHub:
             self.__input_path = self.get_ids_of_nodes_to_be_connected(path, direction)  
             # path to send_to_tvb
             self.__output_path= [
-                path + "transformation/send_to_tvb/" + str(id_proxy[id_transformer]) + ".txt"]  # NOTE id_transformer is 0
+                path + "/transformation/send_to_tvb/" + str(id_proxy[id_transformer]) + ".txt"]  # NOTE id_transformer is 0
 
         # tvb to nest
         elif self.__direction == 2:
@@ -291,7 +295,7 @@ class InterscaleHub:
             # self.function_translat
             # path to receive_from_tvb
             self.__input_path= [
-                path + "transformation/receive_from_tvb/" + str(id_proxy[id_transformer]) + ".txt"]  # NOTE id_transformer is 0
+                path + "/transformation/receive_from_tvb/" + str(id_proxy[id_transformer]) + ".txt"]  # NOTE id_transformer is 0
             # path to spike_gernerators
             self.__output_path = self.get_ids_of_nodes_to_be_connected(path, direction)
 

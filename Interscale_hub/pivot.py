@@ -23,6 +23,7 @@ from EBRAINS_InterscaleHUB.Interscale_hub.transformer import store_data, analyse
 #tvb to nest
 from EBRAINS_InterscaleHUB.Interscale_hub.transformer import generate_data
 
+from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
 # NestTvbPivot and TvbNestPivot classes:
 # TODO: proper abstraction -> extract the usecase details from the general implementation
@@ -36,17 +37,15 @@ from EBRAINS_InterscaleHUB.Interscale_hub.transformer import generate_data
 # TODO: rework on the receive and send loops (both, general coding style and usecase specifics)
 
 class NestTvbPivot:
-    def __init__(self, intracomm, param, comm_receiver, comm_sender, databuffer):
+    def __init__(self, intracomm, param, comm_receiver, comm_sender, databuffer, configurations_manager, log_settings):
         '''
         '''
-        
-        # TODO: logger placeholder for testing
-        self.__logger = logging.getLogger("NestTvbPivot")
-        handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        self.__logger.addHandler(handler)
-        self.__logger.setLevel(logging.DEBUG)
+        self._log_settings = log_settings
+        self._configurations_manager = configurations_manager
+        self.__logger = self._configurations_manager.load_log_configurations(
+                                        name="NestTvbPivot",
+                                        log_configurations=self._log_settings,
+                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)
         
         # Parameter for transformation and analysis
         self.__param = param
@@ -60,6 +59,7 @@ class NestTvbPivot:
 
         # How many Nest ranks are sending, how many Tvb ranks are receiving
         self.__databuffer = databuffer
+        self.__logger.info("Initialised")
     
     
     def start(self, intracomm):
@@ -233,18 +233,24 @@ class NestTvbPivot:
 
 
 class TvbNestPivot: 
-    def __init__(self, intracomm, param, comm_receiver, comm_sender, databuffer):
+    def __init__(self, intracomm, param, comm_receiver, comm_sender, databuffer, configurations_manager, log_settings):
         '''
         '''
         
         # TODO: logger placeholder for testing
-        self.__logger = logging.getLogger("TvbNestPivot")
-        handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        self.__logger.addHandler(handler)
-        self.__logger.setLevel(logging.DEBUG)
-        self.__logger.info("Initialise...")
+        self._log_settings = log_settings
+        self._configurations_manager = configurations_manager
+        self.__logger = self._configurations_manager.load_log_configurations(
+                                        name="TvbNestPivot",
+                                        log_configurations=self._log_settings,
+                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)
+        # self.__logger = logging.getLogger("TvbNestPivot")
+        # handler = logging.StreamHandler(sys.stdout)
+        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # handler.setFormatter(formatter)
+        # self.__logger.addHandler(handler)
+        # self.__logger.setLevel(logging.DEBUG)
+        
 
         # Parameter for transformation and analysis
         self.__param = param
@@ -257,6 +263,7 @@ class TvbNestPivot:
             self.__num_receiving = self.__comm_sender.Get_remote_size()
         # How many TVB ranks are sending, how many NEST ranks are receiving
         self.__databuffer = databuffer
+        self.__logger.info("Initialised")
 
 
     def start(self, intracomm):

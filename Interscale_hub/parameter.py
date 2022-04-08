@@ -26,14 +26,13 @@ class Parameter:
     - tvb to nest params (size_list, list_id) set in pivot.py
 
     '''
-    def __init__(self):
+    def __init__(self, path):
         '''
         init all param for both directions.
         '''
-        path_file = os.path.dirname(__file__)
         self.__parameter = {
                 "co_simulation": True,
-                "path": "/home/vagrant/multiscale-cosim-repos/TVB-NEST-usecase1/result_sim/co-simulation/",
+                "path": path,
                 "simulation_time": 1000.0,
                 "level_log": 1,
                 "resolution": 0.1,
