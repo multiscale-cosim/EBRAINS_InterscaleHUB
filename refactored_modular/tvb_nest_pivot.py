@@ -17,8 +17,9 @@ import time
 import numpy as np
 
 from EBRAINS_InterscaleHUB.refactored_modular.pivot_base import PivotBaseClass
-
 from EBRAINS_InterscaleHUB.Interscale_hub.transformer import generate_data
+from EBRAINS_InterscaleHUB.refactored_modular import interscalehub_utils
+
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
 
@@ -124,14 +125,20 @@ class TvbNestPivot(PivotBaseClass):
                 # Mark as 'ready to do analysis'
                 self.__databuffer[-1] = 0
                 self.__databuffer[-2] = size # info about size of data array
+                # continue receiving the data
+                continue
             elif status_.Get_tag() == 1:
                 # NOTE: simulation ended
-                # break
                 # everything goes fine, terminate the loop and respond with OK
                 return Response.OK
             else:
-                # TODO Log exception with traceback and terminate with ERROR
-                raise Exception("bad mpi tag"+str(status_.Get_tag()))
+                # A 'bad' MPI tag is received,
+                # log the exception with traceback
+                interscalehub_utils.log_exception(
+                    log_message="bad mpi tag :",
+                    mpi_tag_received=status_.Get_tag())
+                # terminate with Error
+                return Response.ERROR
         
         # logger.info('TVB_to_NEST: End of receive function')
 
@@ -211,15 +218,21 @@ class TvbNestPivot(PivotBaseClass):
                 ### OLD code end
             elif  status_.Get_tag() == 1:
                 # NOTE: one sim step? inconsistent with receiving side
+                # continue sending data
                 continue
             elif status_.Get_tag() == 2:
                 # NOTE: simulation ended
                 # break
-                 # everything goes fine, terminate the loop and respond with OK
+                # everything goes fine, terminate the loop and respond with OK
                 return Response.OK
             else:
-                # TODO Log exception with traceback and terminate with ERROR
-                raise Exception("bad mpi tag : "+str(status_.Get_tag()))
+               # A 'bad' MPI tag is received,
+                # log the exception with traceback
+                interscalehub_utils.log_exception(
+                    log_message="bad mpi tag :",
+                    mpi_tag_received=status_.Get_tag())
+                # terminate with Error
+                return Response.ERROR
         
 
     def _transform(self):
