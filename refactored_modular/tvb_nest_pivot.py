@@ -42,8 +42,6 @@ class TvbNestPivot(PivotBaseClass):
     after processing/transforming to the required format.
     '''
     def __init__(self, intracomm, param, comm_receiver, comm_sender, databuffer, configurations_manager, log_settings):
-        '''
-        '''
         self._log_settings = log_settings
         self._configurations_manager = configurations_manager
         self.__logger = self._configurations_manager.load_log_configurations(
