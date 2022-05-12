@@ -13,8 +13,6 @@
 # ------------------------------------------------------------------------------ 
 
 from mpi4py import MPI
-import logging
-import sys
 import pathlib
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
@@ -84,6 +82,7 @@ class IntercommManager:
         inter_comm.Disconnect()
         MPI.Close_port(port) 
         self.__logger.info('Successfully disconnected and closed port')
+        
         # Finalize not needed in mpi4py
         # source:  https://mpi4py.readthedocs.io/en/stable/overview.html
         # MPI.Finalize()
