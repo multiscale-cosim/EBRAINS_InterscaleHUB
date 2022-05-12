@@ -9,5 +9,13 @@
 #   Division: High Performance Computing in Neuroscience
 # Laboratory: Simulation Laboratory Neuroscience
 #       Team: Multi-scale Simulation and Design
-#
-# ------------------------------------------------------------------------------  
+# ------------------------------------------------------------------------------
+
+class InterscaleHubManager:
+    '''
+    1) Interacts with InterscaleHub Facade to steer the execution
+    2) Manages the InterscaleHub functionality.
+    3) Medaites the interaction/communication between the InterscaleHub
+    components such as pivot, transformer, analyzer, etc.
+    '''
+    pass
