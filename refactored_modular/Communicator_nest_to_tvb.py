@@ -16,7 +16,7 @@ from mpi4py import MPI
 import time
 import numpy as np
 
-from EBRAINS_InterscaleHUB.refactored_modular.pivot_base import PivotBaseClass
+from EBRAINS_InterscaleHUB.refactored_modular.Communicator import Communicator
 from EBRAINS_InterscaleHUB.refactored_modular import interscalehub_utils
 from EBRAINS_InterscaleHUB.Interscale_hub.transformer import spiketorate
 
@@ -34,7 +34,7 @@ from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
 
 # TODO: rework on the receive and send loops (both, general coding style and usecase specifics)
 
-class NestTvbPivot(PivotBaseClass):
+class CommunicatorNestTvb(Communicator):
     '''
     Implements the PivotBaseClass for abstracting the pivot operations and
     the underlying communication protocol. This class provides wrappers

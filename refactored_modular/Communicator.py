@@ -14,9 +14,10 @@
 import abc
 
 
-class PivotBaseClass(metaclass=abc.ABCMeta):
+class Communicator(metaclass=abc.ABCMeta):
     '''
-    Abstract base class for pivot operations. It provides the following
+    Abstract base class for communication, pivot operations
+    and mapping of MPI resources. It provides the following
     functionality:
     1) Receives data from an application (e.g. simulator, Insite, etc.).
     2) Transforms the data to the format as required by the receiving

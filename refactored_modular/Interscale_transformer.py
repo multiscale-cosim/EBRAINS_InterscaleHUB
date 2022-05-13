@@ -11,24 +11,21 @@
 # Laboratory: Simulation Laboratory Neuroscience
 # Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
-import abc
 
 
-class InterscaleTransformerBaseClass(metaclass=abc.ABCMeta):
+class InterscaleTransformer():
     '''
-    Abstract base class for transformation of data to change the scales.
+    Class for transformation of data to change the scales.
     '''
-    @classmethod
-    def __subclasshook__(cls, subclass):
-        return ((hasattr(subclass, 'transform') and
-                callable(subclass.transform)) or
-                NotImplemented)
-
-    @abc.abstractmethod
+    def __init__():
+        """
+        """
+        raise NotImplementedError
+    
     def transform(self, *args, **kwargs):
         """Transforms the data from one format to another .
         
-        # TODO discuss what parameters are required for an abstract version of transformation?
+        # TODO discuss what parameters are required for (usecase specific) transformation
         # TODO validate if it transforms the data otherwise return ERROR as response
         # NOTE Followings are taken from rate_to_spike and spike_to_rate functions
 

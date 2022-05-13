@@ -11,26 +11,23 @@
 # Laboratory: Simulation Laboratory Neuroscience
 # Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
-import abc
 
 
-class ScienceAnalyzerBaseClass(metaclass=abc.ABCMeta):
+class Analyzer():
     '''
-    Abstract base class for analysis of data.
+    Main class for analysis of data.
     '''
-    @classmethod
-    def __subclasshook__(cls, subclass):
-        return ((hasattr(subclass, 'analyze') and
-                callable(subclass.analyze)) or
-                NotImplemented)
+    def __init__():
+        """
+        """
+        raise NotImplementedError
 
-    @abc.abstractmethod
     def analyze(self, data, time_start, time_stop, **kwargs):
         """analyzes the data for a given time interval and returns the results.
         
-        # TODO Discuss what parameters are required for an abstract version of analysis?
+        # TODO Discuss how to handle and call the available Analysis wrappers
         # TODO Validate if it analyze the data otherwise return ERROR as response
-        # NOTE Followings are taken from rate_to_spike and spike_to_rate functions
+        # TODO First usecase functions are rate to spike and spike to rate 
 
         Parameters
         ----------
