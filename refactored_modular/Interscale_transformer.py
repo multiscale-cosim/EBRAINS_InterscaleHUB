@@ -13,14 +13,24 @@
 # ------------------------------------------------------------------------------
 
 
+from EBRAINS_InterscaleHUB.refactored_modular.wrapper.elephant_wrapper import ElephantWrapper
+from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
+
+
 class InterscaleTransformer():
     '''
     Class for transformation of data to change the scales.
     '''
-    def __init__():
+    def __init__(self,configurations_manager, log_settings):
         """
         """
-        raise NotImplementedError
+        self._log_settings = log_settings
+        self._configurations_manager = configurations_manager
+        self.__logger = self._configurations_manager.load_log_configurations(
+                                        name="InterscaleTransformer",
+                                        log_configurations=self._log_settings,
+                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)
+        self.__logger.info("Initialised")
     
     def transform(self, *args, **kwargs):
         """Transforms the data from one format to another .
