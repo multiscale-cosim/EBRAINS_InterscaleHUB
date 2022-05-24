@@ -17,8 +17,9 @@ import time
 import numpy as np
 
 from EBRAINS_InterscaleHUB.refactored_modular.Communicator import Communicator
-from EBRAINS_InterscaleHUB.Interscale_hub.transformer import generate_data
 from EBRAINS_InterscaleHUB.refactored_modular import interscalehub_utils
+from EBRAINS_InterscaleHUB.refactored_modular import interscalehub_mediator as mediator
+#from EBRAINS_InterscaleHUB.Interscale_hub.transformer import generate_data
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
@@ -41,25 +42,27 @@ class CommunicatorTvbNest(Communicator):
     for receving the data from TVB simulator and sending it to NEST simulator
     after processing/transforming to the required format.
     '''
-    def __init__(self, intracomm, param, comm_receiver, comm_sender, databuffer, configurations_manager, log_settings):
-        self._log_settings = log_settings
-        self._configurations_manager = configurations_manager
-        self.__logger = self._configurations_manager.load_log_configurations(
-                                        name="TvbNestPivot",
-                                        log_configurations=self._log_settings,
-                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)     
-
+    def __init__(self, configurations_manager, log_settings, name, databuffer,
+                 intracomm, param, comm_receiver, comm_sender):
+        '''
+        '''
+        super().__init__(configurations_manager,
+                         log_settings,
+                         name,
+                         databuffer
+                         )
+        
         # Parameter for transformation and analysis
         self.__param = param
         # INTERcommunicator
+        # TODO: Revisit the protocol to TVB and NEST
+        # TODO: rank 0 and rank 1 hardcoded
         if intracomm.Get_rank() == 1:
             self.__comm_receiver = comm_receiver
             self.__num_sending = self.__comm_receiver.Get_remote_size()
-        else:    
+        elif intracomm.Get_rank() == 0:    
             self.__comm_sender = comm_sender
             self.__num_receiving = self.__comm_sender.Get_remote_size()
-        # How many TVB ranks are sending, how many NEST ranks are receiving
-        self.__databuffer = databuffer
         self.__logger.info("Initialised")
 
 
@@ -72,7 +75,7 @@ class CommunicatorTvbNest(Communicator):
         '''
         if intracomm.Get_rank() == 0: # Receiver from input sim, rank 0
             return self._send()
-        else: #  Science/analyse and sender to TVB, rank 1-x
+        elif intracomm.Get_rank() == 1: #  Science/analyse and sender to TVB, rank 1
             return self._receive()
 
 
@@ -180,8 +183,9 @@ class CommunicatorTvbNest(Communicator):
                     time.sleep(0.001)
                     pass
 
-                # TODO: All science/generate here. Move to a proper place.
-                spikes_times = self._transform()
+                # NOTE: calling the mediator which calls the corresponding transformer functions
+                spikes_times = mediator.rate_to_spike(self.__databuffer)
+                
                 # Mark as 'ready to receive next simulation step'
                 self.__databuffer[-1] = 1
                 
@@ -232,12 +236,8 @@ class CommunicatorTvbNest(Communicator):
                 # terminate with Error
                 return Response.ERROR
         
-
+'''
     def _transform(self):
-        '''
-        This step contains some pivoting, transformation and analysis.
-        TODO: encapsulate
-        '''
         generator = generate_data(self.__param)
         # NOTE: count is a hardcoded '0'. Why?
         # time_step are the first two doubles in the buffer
@@ -251,3 +251,4 @@ class CommunicatorTvbNest(Communicator):
                                                 self.__databuffer[:2],
                                                 self.__databuffer[2:int(self.__databuffer[-2])])
         return spikes_times
+'''

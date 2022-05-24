@@ -11,29 +11,32 @@
 # Laboratory: Simulation Laboratory Neuroscience
 # Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
-import abc
 
 
-class Communicator(metaclass=abc.ABCMeta):
+class Communicator():
     '''
-    Abstract base class for communication, pivot operations
-    and mapping of MPI resources. It provides the following
-    functionality:
-    1) Receives data from an application (e.g. simulator, Insite, etc.).
-    2) Transforms the data to the format as required by the receiving
-    application.
-    3) Sends the data to the destination.
+    
     '''
-    @classmethod
-    def __subclasshook__(cls, subclass):
-        return ((hasattr(subclass, 'start') and
-                callable(subclass.start) and
-                (hasattr(subclass, 'stop') and
-                callable(subclass.stop))) or
-                NotImplemented)
+    def __init__(self, configurations_manager, log_settings, name, databuffer):
+        """Init of parameters
+        
+        Parameters
+        ----------
+        intracomm : Intra communicator
 
-    @abc.abstractmethod
-    def start(self, intracomm):
+        Returns
+        ------
+            return code as int to indicate an un/successful termination.
+        """
+        self._log_settings = log_settings
+        self._configurations_manager = configurations_manager
+        self.__logger = self._configurations_manager.load_log_configurations(
+                                        name=name,
+                                        log_configurations=self._log_settings,
+                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)
+        self.__databuffer = databuffer
+
+    def start(self):
         """Starts the pivot operations.
         
         Parameters
@@ -46,7 +49,6 @@ class Communicator(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def stop(self):
         """Stops the pivot operations.
 

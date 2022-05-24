@@ -18,7 +18,8 @@ import numpy as np
 
 from EBRAINS_InterscaleHUB.refactored_modular.Communicator import Communicator
 from EBRAINS_InterscaleHUB.refactored_modular import interscalehub_utils
-from EBRAINS_InterscaleHUB.Interscale_hub.transformer import spiketorate
+from EBRAINS_InterscaleHUB.refactored_modular import interscalehub_mediator as mediator
+#from EBRAINS_InterscaleHUB.Interscale_hub.transformer import spiketorate
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
@@ -41,28 +42,28 @@ class CommunicatorNestTvb(Communicator):
     for receving the data from NEST simulator and sending it to TVB simulator
     after processing/transforming to the required format.
     '''
-    def __init__(self, intracomm, param, comm_receiver, comm_sender, databuffer, configurations_manager, log_settings):
+    def __init__(self, configurations_manager, log_settings, name, databuffer,
+                 intracomm, param, comm_receiver, comm_sender):
         '''
         '''
-        self._log_settings = log_settings
-        self._configurations_manager = configurations_manager
-        self.__logger = self._configurations_manager.load_log_configurations(
-                                        name="NestTvbPivot",
-                                        log_configurations=self._log_settings,
-                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)
+        super().__init__(configurations_manager,
+                         log_settings,
+                         name,
+                         databuffer
+                         )
         
         # Parameter for transformation and analysis
         self.__param = param
         # INTERcommunicator
+        # TODO: Revisit the protocol to TVB and NEST
+        # TODO: rank 0 and rank 1 hardcoded
         if intracomm.Get_rank() == 0:
             self.__comm_receiver = comm_receiver
             self.__num_sending = self.__comm_receiver.Get_remote_size()
-        else:
+        elif intracomm.Get_rank() == 1:
             self.__comm_sender = comm_sender
             self.__num_receiving = self.__comm_sender.Get_remote_size()
 
-        # How many Nest ranks are sending, how many Tvb ranks are receiving
-        self.__databuffer = databuffer
         self.__logger.info("Initialised")
     
     
@@ -75,7 +76,7 @@ class CommunicatorNestTvb(Communicator):
         '''
         if intracomm.Get_rank() == 0: # Receiver from input sim, rank 0
             self._receive()
-        else: #  Science/analyse and sender to TVB, rank 1-x
+        elif intracomm.Get_rank() == 1: #  Science/analyse and sender to TVB, rank 1-x
             self._send()
 
 
@@ -204,8 +205,10 @@ class CommunicatorNestTvb(Communicator):
                 while self.__databuffer[-1] != 0: # TODO: use MPI, remove the sleep
                     time.sleep(0.001)
                     pass
-                # TODO: All science/analysis here. Move to a proper place.
-                times,data = self._transform(count)
+                
+                # NOTE: calling the mediator which calls the corresponding transformer functions
+                times,data = mediator.spike_to_rate(self.__databuffer, count)
+
                 # Mark as 'ready to receive next simulation step'
                 self.__databuffer[-1] = 1
                 
@@ -236,32 +239,12 @@ class CommunicatorNestTvb(Communicator):
                 # terminate with Error
                 return Response.ERROR
 
-    
+'''    
     def _transform(self, count):
-        '''
-        This step contains some pivoting, transformation and analysis.
-        TODO: encapsulate
-        :param count: Simulation iteration/step
-        :return times, data: simulation times and the calculated rates
-        '''
         #store: Python object, create the histogram 
         #analyse: Python object, calculate rates
         spikerate = spiketorate(self.__param)
         times, data = spikerate.spike_to_rate(count, self.__databuffer[-2], self.__databuffer)
 
-        '''
-        store = store_data(self.__param)
-        analyse = analyse_data(self.__param)
-        
-        # TODO: Step 1 and 2 can be merged into one step. Buffer is no longer filled rank by rank.
-        # Make this parallel with the INTRA communicator (should be embarrassingly parallel).
-        # Step 1) take all data from buffer and create histogram
-        # second to last index in databuffer denotes how much data there is
-        self.__logger.info("NESTtoTVBPivot -- transform -- buffer head:"+str(self.__databuffer[-2]))
-        store.add_spikes(count, self.__databuffer[:int(self.__databuffer[-2])])
-        # Step 2) take the resulting histogram
-        data_to_analyse = store.return_data()
-        # Step 3) Analyse this data, i.e. calculate rates?
-        times,data = analyse.analyse(count, data_to_analyse)
-        '''
         return times, data
+'''
