@@ -11,24 +11,31 @@
 # Laboratory: Simulation Laboratory Neuroscience
 # Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
-import abc
 
 
-class InterscaleTransformerBaseClass(metaclass=abc.ABCMeta):
+from EBRAINS_InterscaleHUB.refactored_modular.wrapper.elephant_wrapper import ElephantWrapper
+from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
+
+
+class InterscaleTransformer():
     '''
-    Abstract base class for transformation of data to change the scales.
+    Class for transformation of data to change the scales.
     '''
-    @classmethod
-    def __subclasshook__(cls, subclass):
-        return ((hasattr(subclass, 'transform') and
-                callable(subclass.transform)) or
-                NotImplemented)
-
-    @abc.abstractmethod
+    def __init__(self,configurations_manager, log_settings):
+        """
+        """
+        self._log_settings = log_settings
+        self._configurations_manager = configurations_manager
+        self.__logger = self._configurations_manager.load_log_configurations(
+                                        name="InterscaleTransformer",
+                                        log_configurations=self._log_settings,
+                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)
+        self.__logger.info("Initialised")
+    
     def transform(self, *args, **kwargs):
         """Transforms the data from one format to another .
         
-        # TODO discuss what parameters are required for an abstract version of transformation?
+        # TODO discuss what parameters are required for (usecase specific) transformation
         # TODO validate if it transforms the data otherwise return ERROR as response
         # NOTE Followings are taken from rate_to_spike and spike_to_rate functions
 

@@ -1,32 +1,94 @@
 # ------------------------------------------------------------------------------
-#  Copyright 2020 Forschungszentrum Jülich GmbH
-# "Licensed to the Apache Software Foundation (ASF) under one or more contributor
-#  license agreements; and to You under the Apache License, Version 2.0. "
+#  Copyright 2020 Forschungszentrum Jülich GmbH and Aix-Marseille Université
+# "Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements; and to You under the Apache License,
+# Version 2.0. "
 #
 # Forschungszentrum Jülich
-#  Institute: Institute for Advanced Simulation (IAS)
-#    Section: Jülich Supercomputing Centre (JSC)
-#   Division: High Performance Computing in Neuroscience
+# Institute: Institute for Advanced Simulation (IAS)
+# Section: Jülich Supercomputing Centre (JSC)
+# Division: High Performance Computing in Neuroscience
 # Laboratory: Simulation Laboratory Neuroscience
-#       Team: Multi-scale Simulation and Design
-#
+# Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
 
-# TODO: 
-# copied: rate_spike.py from NEST-TVB usecase.
-# implement properly as elephant science part
-# use both methods as Elephant plugin example!
 
-from elephant.spike_train_generation import homogeneous_poisson_process, inhomogeneous_poisson_process
+#TODO raw copy paste of both rate to spike implementations (by Lionel)
+#TODO "choose" one
 import numpy as np
-from neo import AnalogSignal
-from quantities import Hz
 
-from EBRAINS_InterscaleHUB.refactored_modular.interscale_transformer_base import ScienceAnalyzerBaseClass
+from quantities import ms, Hz
+from neo.core import AnalogSignal
+
+from elephant.spike_train_generation import inhomogeneous_poisson_process,
+homogeneous_poisson_process
+
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
+# NOTE Former rate_to_spikes_transformer.py subclass
+class RatetoSpikes():
+    '''Transforms the rates into spikes train.'''
 
-class AnalyzerRateToSpikes(ScienceAnalyzerBaseClass):
+    def __init__(self, param, configurations_manager, log_settings):
+        self._log_settings = log_settings
+        self._configurations_manager = configurations_manager
+        self.__logger = self._configurations_manager.load_log_configurations(
+                                        name="Transformer--Rate_to_Spikes",
+                                        log_configurations=self._log_settings,
+                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)     
+        # number of spike generators
+        self.nb_spike_generator = param['nb_neurons']
+        self.path = param['path'] + "/transformation/"
+        
+        # variable for saving values
+        self.save_spike = bool(param['save_spikes'])
+        if self.save_spike:
+            self.save_spike_buf = None
+        self.save_rate = bool(param['save_rate'])
+        if self.save_rate:
+            self.save_rate_buf = None
+        
+        # number of synapsis
+        self.nb_synapse = int(param["nb_brain_synapses"])
+        self.__logger.info("Initialised")
+        
+    def transform(self,count,time_step,rate):
+        """
+        implements the abstract method for the transformation of the
+        rate to spikes.
+
+        Parameters
+        ----------
+        count : int
+            counter of the number of time of the transformation (identify the
+            timing of the simulation)
+
+        time_step: int
+           time interval for the signal
+
+        rate: Any  # e.g. 1D numpy array
+            Spikes rate
+
+        Returns
+        ------
+            spikes_train: list
+                returns spikes train if data is transformed successfully
+        """
+        rate *= self.nb_synapse  # rate of poisson generator ( due property of poisson process)
+        rate += 1e-12
+        rate = np.abs(rate)  # avoid rate equals to zeros
+        signal = AnalogSignal(rate * Hz, t_start=(time_step[0] + 0.1) * ms,
+                              sampling_period=(time_step[1] - time_step[0]) / rate.shape[-1] * ms)
+        self.__logger.debug(f"rate: {rate}, signal: {signal}, time_step: {time_step}")
+        spikes_train = []
+        # generate individual spike trains
+        for i in range(self.nb_spike_generator[0]):
+            spikes_train.append(np.around(np.sort(inhomogeneous_poisson_process(signal, as_array=True)), decimals=1))
+        return spikes_train
+    
+    
+#NOTE former analyzer_rate_to_spike.py subclass    
+class AnalyzerRateToSpikes():
     '''Implements the abstract base class for analyzing the data.'''
 
     def __init__(self, configurations_manager=None, log_settings=None):
@@ -100,16 +162,3 @@ class AnalyzerRateToSpikes(ScienceAnalyzerBaseClass):
                 for rate in rates:
                     result.append(homogeneous_poisson_process(rate=rate, t_start=t_start, t_stop=t_stop, as_array=True))
             return np.array(result)
-
-if __name__=='__main__':
-    from quantities import ms,Hz
-    rates_to_spikes_analyzer = AnalyzerRateToSpikes()
-    resultant_spikes = rates_to_spikes_analyzer.analyze([7942.65518188, 7168.64013672, 6612.2756958,  4990.57312012, 5077.53219604,
-    7417.4659729,  7284.71984863, 6751.57318115, 5528.10173035, 5102.45170593,
-    6506.46362305, 6908.81881714, 4290.93399048, 5575.27732849, 7972.46932983,
-    9518.87893677, 7561.74240112, 7813.84735107, 8878.12805176, 6734.36965942,
-    7277.06069946, 7547.31292725, 9538.67263794, 6232.00950623, 8005.1651001,
-    5534.51652527, 7441.41998291, 7747.13668823, 8784.91744995, 9481.22253418,
-    7909.23614502, 6691.65420532, 7793.50280762, 8774.40795898, 7772.98965454]*Hz, 7.1*ms ,10.5*ms,variation=True)
-    print(resultant_spikes)
- 
