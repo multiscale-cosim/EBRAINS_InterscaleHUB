@@ -10,6 +10,8 @@
 # Laboratory: Simulation Laboratory Neuroscience
 #       Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------ 
+from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_BUFFER_STATES
+
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
 
@@ -29,20 +31,21 @@ class InterscaleHubMediator:
 
     def rate_to_spikes(self):
         '''converts rate to spike trains'''
-        if self.__data_buffer_manager.get_at(index=-2) == DATA_BUFFER_STATES.HEAD:
+        if self.__data_buffer_manager.get_at(index=-2) == DATA_BUFFER_STATES.HEADER:
             time_step = self.__data_buffer_manager.get_upto(index=2)
-            data_buffer = self.__data_buffer_manager.get_from(index=2)
+            data_buffer = self.__data_buffer_manager.get_from(starting_index=2)
         else:
+            mpi_shared_data_buffer = self.__data_buffer_manager.mpi_shared_memory_buffer
             time_step = self.__data_buffer_manager.get_upto(index=2)
             data_buffer = self.__data_buffer_manager.get_from_range(
                 start=2,
-                end=int(data_buffer[-2]))
+                end=int(mpi_shared_data_buffer[-2]))
         
         spike_trains = self.__transformer.rate_to_spikes(time_step, data_buffer)
         self.__logger.debug(f'spikes after conversion: {spike_trains}')
         return spike_trains
 
-    def spike_to_rate(self, count, size_at_index):
+    def spikes_to_rate(self, count, size_at_index):
         '''
         Two step conversion from spikes/spike events to firing rates.
         '''

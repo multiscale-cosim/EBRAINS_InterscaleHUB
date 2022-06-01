@@ -14,7 +14,7 @@
 from mpi4py import MPI
 import numpy as np
 
-from EBRAINS_InterscaleHUB.refactored_modular.interscalehub_enums import DATA_BUFFER_STATES
+from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_BUFFER_STATES
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
@@ -84,7 +84,7 @@ class InterscaleHubBufferManager(metaclass=MetaInterscaleHubBuffer):
 
         # create an MPI Window object that allocates memory
         self.__logger.debug("creating shared memory window")
-        mpi_window = MPI.Win.Allocate_shared(buffer_bytes, desired_data_size, intra_comm)
+        mpi_window = MPI.Win.Allocate_shared(buffer_bytes, desired_data_size, comm=intra_comm)
         # get the address for load/store access to window segment
         self.__logger.debug("getting buffer and data (unit) size")
         shared_buffer, actual_data_size = mpi_window.Shared_query(0)

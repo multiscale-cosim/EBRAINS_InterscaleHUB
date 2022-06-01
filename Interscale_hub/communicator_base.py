@@ -13,6 +13,8 @@
 # ------------------------------------------------------------------------------
 from abc import ABC, abstractmethod
 
+from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
+
 
 class BaseCommunicator(ABC):
     '''
@@ -26,18 +28,18 @@ class BaseCommunicator(ABC):
         classes'''
         self._log_settings = log_settings
         self._configurations_manager = configurations_manager
-        self.__logger = self._configurations_manager.load_log_configurations(
+        self._logger = self._configurations_manager.load_log_configurations(
                         name=communicator_name,
                         log_configurations=self._log_settings,
                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         
         # variables commonly used across the child classes
-        self.__mediator = mediator
-        self.__data_buffer_manager = data_buffer_manager
-        self.__comm_receiver = None
-        self.__comm_sender = None
-        self.__num_sending = 0
-        self.__num_receiving = 0
+        self._mediator = mediator
+        self._data_buffer_manager = data_buffer_manager
+        self._comm_receiver = None
+        self._comm_sender = None
+        self._num_sending = 0
+        self._num_receiving = 0
 
     @abstractmethod
     def start(self,  intra_communicator, inter_communicator):
