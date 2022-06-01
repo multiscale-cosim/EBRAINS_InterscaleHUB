@@ -18,19 +18,17 @@ from neo.core import AnalogSignal,SpikeTrain
 
 from elephant.statistics import instantaneous_rate, mean_firing_rate
 from elephant.kernels import RectangularKernel
-from elephant.spike_train_generation import inhomogeneous_poisson_process,
-homogeneous_poisson_process
+from elephant.spike_train_generation import inhomogeneous_poisson_process, homogeneous_poisson_process
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
-class SpikeRateConversion:
+
+class SpikeRateConvertor:
     
     def __init__(self, param, configurations_manager, log_settings):
-        self._log_settings = log_settings
-        self._configurations_manager = configurations_manager
-        self.__logger = self._configurations_manager.load_log_configurations(
+        self.__logger = configurations_manager.load_log_configurations(
                                         name="Elephant -- spike_rate_conversion",
-                                        log_configurations=self._log_settings,
+                                        log_configurations=log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)  
         
         # NOTE:params spike to rate
@@ -46,23 +44,22 @@ class SpikeRateConversion:
         
         # NOTE:params rate to spike
         # number of spike generators
-        self.nb_spike_generator = param['nb_neurons']
-        self.path = param['path'] + "/transformation/"
+        self.__nb_spike_generator = param['nb_neurons']
+        # self.__path = param['path'] + "/transformation/"
         
-        # variable for saving values
-        self.save_spike = bool(param['save_spikes'])
-        if self.save_spike:
-            self.save_spike_buf = None
-        self.save_rate = bool(param['save_rate'])
-        if self.save_rate:
-            self.save_rate_buf = None
+        # # variable for saving values
+        # self.__save_spike = bool(param['save_spikes'])
+        # if self.__save_spike:
+        #     self.__save_spike_buf = None
+        # self.__save_rate = bool(param['save_rate'])
+        # if self.__save_rate:
+        #     self.__save_rate_buf = None
         
         # number of synapsis
-        self.nb_synapse = int(param["nb_brain_synapses"])
+        self.__nb_synapse = int(param["nb_brain_synapses"])
         
         self.__logger.info("Initialised")
-        
-        
+    
     def spike_to_spiketrains(self, count, data_size, data_buffer):
         """
         get the spike time from the buffer and order them by neurons
@@ -162,7 +159,7 @@ class SpikeRateConversion:
         """
         rate = data_buffer # NOTE: match argument names
         
-        rate *= self.nb_synapse  # rate of poisson generator ( due property of poisson process)
+        rate *= self.__nb_synapse  # rate of poisson generator ( due property of poisson process)
         rate += 1e-12
         rate = np.abs(rate)  # avoid rate equals to zeros
         signal = AnalogSignal(rate * Hz, t_start=(time_step[0] + 0.1) * ms,
@@ -170,7 +167,7 @@ class SpikeRateConversion:
         self.__logger.debug(f"rate: {rate}, signal: {signal}, time_step: {time_step}")
         spikes_train = []
         # generate individual spike trains
-        for i in range(self.nb_spike_generator[0]):
+        for i in range(self.__nb_spike_generator[0]):
             spikes_train.append(np.around(np.sort(inhomogeneous_poisson_process(signal, as_array=True)), decimals=1))
         return spikes_train
 

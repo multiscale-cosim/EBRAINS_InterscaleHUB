@@ -9,7 +9,6 @@
 #   Division: High Performance Computing in Neuroscience
 # Laboratory: Simulation Laboratory Neuroscience
 #       Team: Multi-scale Simulation and Design
-#
 # ------------------------------------------------------------------------------ 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
@@ -29,37 +28,31 @@ class InterscaleHubMediator:
         self.__logger.info("initialized")
 
     def rate_to_spikes(self):
-        # TODO: make correct calls to data_buffer_manager
+        '''converts rate to spike trains'''
         if self.__data_buffer_manager.get_at(index=-2) == DATA_BUFFER_STATES.HEAD:
-            spikes = self.__transformer.rate_to_spikes(data_buffer[:2],
-                                                       data_buffer[2:])
+            time_step = self.__data_buffer_manager.get_upto(index=2)
+            data_buffer = self.__data_buffer_manager.get_from(index=2)
         else:
-            spikes = self.__transformer.rate_to_spikes(data_buffer[:2],
-                                                       data_buffer[2:int(data_buffer[-2])])
-        # NOTE: former call to function, removed unused first argument 'count'
-        # if int(data_buffer[-2]) == 0:
-        #     spikes_times = self.__transformer.rate_to_spikes(0,
-        #                                         data_buffer[:2],
-        #                                         data_buffer[2:])
-        # else:
-        #     spikes_times = self.__transformer.rate_to_spikes(0,
-        #                                         data_buffer[:2],
-        #                                         data_buffer[2:int(data_buffer[-2])])
+            time_step = self.__data_buffer_manager.get_upto(index=2)
+            data_buffer = self.__data_buffer_manager.get_from_range(
+                start=2,
+                end=int(data_buffer[-2]))
+        
+        spike_trains = self.__transformer.rate_to_spikes(time_step, data_buffer)
+        self.__logger.debug(f'spikes after conversion: {spike_trains}')
+        return spike_trains
 
-    def spike_to_rate(self, count, buffer_size, data_buffer):
+    def spike_to_rate(self, count, size_at_index):
         '''
         Two step conversion from spikes/spike events to firing rates.
-        TODO: use databuffer manager
         '''
-        # 1) spike to spiketrains in transfomer
-        spiketrains = self.__transformer.spike_to_spiketrains(count, buffer_size, data_buffer)
-        # 2) spiketrains to rate in analyzer
-        times,data = self.__analyzer.spiketrains_to_rate(count, spiketrains)
-
-''' NOTE: split spike_to_rate call into two?
-    def __spike_to_spike_train(self, count, data_buffer):
-        pass
-
-    def __spike_train_to_rate(self, count, data_buffer):
-        pass
-'''
+        # TODO refactor buffer indexing and buffer access inside analyzer and transformer
+        buffer_size = self.__data_buffer_manager.get_at(index=size_at_index)
+        data_buffer = self.__data_buffer_manager.mpi_shared_memory_buffer
+        # 1) spike to spike_trains in transformer
+        spike_trains = self.__transformer.spike_to_spiketrains(count, buffer_size, data_buffer)
+        self.__logger.debug(f'transformed spike trains: {spike_trains}')
+        # 2) spike_trains to rate in analyzer
+        times, data = self.__analyzer.spiketrains_to_rate(count, spike_trains)
+        self.__logger.debug(f'analyzed rates, time: {times}, data: {data}')
+        return times, data

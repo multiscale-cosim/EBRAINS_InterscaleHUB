@@ -18,7 +18,11 @@ from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_dir
 
 class Analyzer:
     '''
-    Main class for analysis of data.
+    Main class for analysis of data. It wraps the functionality of the libraries
+    such as ELEPHANT for analysis.
+
+    NOTE this wrapper class exposes only the functionality that is supported by
+    InterscaleHub.
     '''
     def __init__(self, param, configurations_manager, log_settings):
         """
@@ -31,35 +35,24 @@ class Analyzer:
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         
         self.__elephant_delegator = ElephantDelegator(param, configurations_manager, log_settings)
-        self.__logger.info("Initialised")
-
+        self.__logger.info("Initialized")
     
-    def spiketrains_to_rate(self, count, spiketrains):
+    def spiketrains_to_rate(self, count, spike_trains):
         """analyzes the data for a given time interval and returns the results.
-        
-        # TODO Discuss how to handle and call the available Analysis wrappers
-        # TODO Validate if it analyze the data otherwise return ERROR as response
-        # TODO First usecase functions are rate to spike and spike to rate 
 
         Parameters
         ----------
-        data : Any
-            Data to be analyzed
+        count : int
+            counter of the number of time of the transformation (identify the
+            timing of the simulation)
 
-        time_start: int
-           time to start the analysis
-
-        time_stop: int
-           time to stop the analysis
-
-        variation : bool
-            boolean for variation of rate
-
-        windows: float
-            the window to compute rate
+        spike_trains: list
+            list of spike trains to be converted into rate
 
         Returns
         ------
-            returns the analyzed data
+             times, rate: numpy array, float
+                tuple of interval and the rate for the interval if data is
+                transformed successfully
         """
-        return self.__elephant_delegator.spiketrains_to_rate(count, spiketrains)
+        return self.__elephant_delegator.spiketrains_to_rate(count, spike_trains)

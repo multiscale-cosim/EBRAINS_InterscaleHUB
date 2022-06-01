@@ -72,10 +72,8 @@ class IntercommManager:
         #port = self.__comm.bcast(port, self.__root) # avoid issues with mpi rank information.
         self.__logger.info('Rank ' + str(self.__comm.Get_rank()) + ' accepting connection on: ' + port)
         inter_comm = comm.Accept(port, self.__info, root) 
-        self.__logger.info('Simulation client connected to' + str(inter_comm.Get_rank()))
-        
+        self.__logger.info('Simulation client connected to' + str(inter_comm.Get_rank()))        
         return inter_comm, port
-
 
     def close_and_finalize(self, inter_comm, port):
         
