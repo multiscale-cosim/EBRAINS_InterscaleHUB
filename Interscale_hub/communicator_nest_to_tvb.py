@@ -234,8 +234,10 @@ class CommunicatorNestTvb(BaseCommunicator):
                 # times, data = spikerate.spike_to_rate(count, self.__databuffer[-2], self.__databuffer)
                 times, data = self.__mediator.spike_to_rate(
                     count,
-                    buffer_size=self.__data_buffer_manager.get_at(index=-2),
-                    data_buffer=self.__data_buffer_manager.mpi_shared_memory_buffer)
+                    size_at_index=-2)
+
+                    # buffer_size=self.__data_buffer_manager.get_at(index=-2),
+                    # data_buffer=self.__data_buffer_manager.mpi_shared_memory_buffer)
 
                 # Mark as 'ready to receive next simulation step'
                 # self.__databuffer[-1] = 1
@@ -267,13 +269,3 @@ class CommunicatorNestTvb(BaseCommunicator):
                     mpi_tag_received=status_.Get_tag())
                 # terminate with Error
                 return Response.ERROR
-
-'''    
-    def _transform(self, count):
-        #store: Python object, create the histogram 
-        #analyse: Python object, calculate rates
-        spikerate = spiketorate(self.__param)
-        times, data = spikerate.spike_to_rate(count, self.__databuffer[-2], self.__databuffer)
-
-        return times, data
-'''

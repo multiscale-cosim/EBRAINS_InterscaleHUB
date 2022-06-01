@@ -11,14 +11,11 @@
 # Laboratory: Simulation Laboratory Neuroscience
 # Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
-
-from xml.dom import IndexSizeErr
 from mpi4py import MPI
 import numpy as np
 
 from EBRAINS_InterscaleHUB.refactored_modular.interscalehub_enums import DATA_BUFFER_STATES
 
-from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
 
@@ -67,6 +64,12 @@ class InterscaleHubBufferManager(metaclass=MetaInterscaleHubBuffer):
 
     def get_from(self, starting_index):
         return self.mpi_shared_memory_buffer[starting_index:]
+
+    def get_upto(self, index):
+        return self.mpi_shared_memory_buffer[:index]
+
+    def get_from_range(self, start, end):
+        return self.mpi_shared_memory_buffer[start:end]
 
     def create_mpi_shared_memory_buffer(self, buffer_size, intra_comm):
         # set unit (data) size for the memory buffer

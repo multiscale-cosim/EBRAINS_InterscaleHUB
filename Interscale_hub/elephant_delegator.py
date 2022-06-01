@@ -11,23 +11,10 @@
 # Laboratory: Simulation Laboratory Neuroscience
 # Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
-
-
-#TODO raw copy paste of all calls to Elephant functions --> refactor!
-#TODO overlap of transformation and analysis --> clean separation
-
-import numpy as np
-
 from EBRAINS_InterscaleHUB.refactored_modular.delegation import (
     elephant_plugin,
-    spike_rate_conversion
+    spike_rate_inter_conversion
     )
-    '''
-    Rate_to_spike,
-    Spike_to_spiketrain,
-    Spiketrain_to_rate
-    )
-    '''
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
 
@@ -47,7 +34,7 @@ class ElephantDelegator:
                                         log_configurations=self._log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         # init members
-        self.spike_rate_conversion = spike_rate_conversion.SpikeRateConversion(
+        self.spike_rate_conversion = spike_rate_inter_conversion.SpikeRateConvertor(
                                         param, 
                                         configurations_manager, 
                                         log_settings)
@@ -55,15 +42,15 @@ class ElephantDelegator:
                                         configurations_manager, 
                                         log_settings)
         # dir member methods
-        self.spikerate_methods = [f for f in dir(SpikeRateConversion) if not f.startswith('_')]
+        self.spikerate_methods = [f for f in dir(SpikeRateConvertor) if not f.startswith('_')]
         self.plugin_methods = [f for f in dir(ElephantPlugin) if not f.startswith('_')]
         self.__logger.info("Initialised")
 
-    
     def __getattr__(self, func):
         '''
         '''
-        def elephant_method(*args):
+        # TODO add support to access the attributes of the classes to be delegated
+        def method(*args):
             if func in self.spikerate_methods:
                 return getattr(self.spike_rate_conversion, func)(*args)
             elif func in self.plugin_methods:
@@ -71,4 +58,3 @@ class ElephantDelegator:
             else:
                 raise AttributeError
         return method
-        

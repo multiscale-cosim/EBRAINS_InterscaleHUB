@@ -11,16 +11,16 @@
 # Laboratory: Simulation Laboratory Neuroscience
 # Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
+# import numpy as np
 
-import numpy as np
-
-#NOTE plugin to be merged in Elephant main !?
-import elephant
+# NOTE plugin to be merged in Elephant main !?
+# import elephant
 # TODO fork, clone and properly import the plugin
 # https://github.com/ojoenlanuca/online_elephant/blob/master/online_statistics.py
-import online_elephant 
+# import online_elephant 
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
+
 
 class ElephantPlugin:
     '''
@@ -37,8 +37,7 @@ class ElephantPlugin:
                                         log_configurations=self._log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         self.__logger.info("Initialised")
-        
-        
+
     def online_statistics():
         '''
         TODO: expose the available statistic modules/functions 
