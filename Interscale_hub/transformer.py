@@ -13,7 +13,7 @@
 # ------------------------------------------------------------------------------
 
 
-from EBRAINS_InterscaleHUB.refactored_modular.elephant_delegator import ElephantDelegator
+from EBRAINS_InterscaleHUB.Interscale_hub.elephant_delegator import ElephantDelegator
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
 

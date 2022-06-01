@@ -16,9 +16,9 @@ from mpi4py import MPI
 import time
 import numpy as np
 
-from EBRAINS_InterscaleHUB.refactored_modular.communicator_base import BaseCommunicator
-from EBRAINS_InterscaleHUB.refactored_modular import interscalehub_utils
-from EBRAINS_InterscaleHUB.refactored_modular.interscalehub_enums import DATA_BUFFER_STATES
+from EBRAINS_InterscaleHUB.Interscale_hub.communicator_base import BaseCommunicator
+from EBRAINS_InterscaleHUB.Interscale_hub import interscalehub_utils
+from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_BUFFER_STATES
 
 from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
 
@@ -51,7 +51,12 @@ class CommunicatorNestTvb(BaseCommunicator):
                          __name__,
                          data_buffer_manager,
                          mediator)
-        self.__logger.info("Initialized")
+        
+        # self._logger = self._configurations_manager.load_log_configurations(
+        #                 name=__name__,
+        #                 log_configurations=self._log_settings,
+        #                 target_directory=DefaultDirectories.SIMULATION_RESULTS)
+        self._logger.info("Initialized")
       
     def start(self, intra_communicator, inter_comm_receiver, inter_comm_sender):
         '''
@@ -66,15 +71,14 @@ class CommunicatorNestTvb(BaseCommunicator):
         # Rank-0 will receive the data
         if intra_communicator.Get_rank() == 0:
             # set inter_communicator for receiving the data
-            self.__comm_receiver = inter_comm_receiver
-            self.__num_sending = self.__comm_receiver.Get_remote_size()
+            self._comm_receiver = inter_comm_receiver
+            self._num_sending = self._comm_receiver.Get_remote_size()
             return self._receive()
 
         # Rank-1 will transform and send the data
         elif intra_communicator.Get_rank() == 1:
             # set inter_communicator for sending the data
-            self.__comm_sender = inter_comm_sender
-            self.__num_receiving = self.__comm_sender.Get_remote_size()  # TODO discuss if it is needed
+            self._comm_sender = inter_comm_sender
             return self._send()
 
     def stop(self):
@@ -82,7 +86,11 @@ class CommunicatorNestTvb(BaseCommunicator):
         TODO: proper execution of stop command
         '''
         # self.__stop = True
-        raise NotImplementedError
+        try:
+            raise NotImplementedError
+        except NotImplementedError:
+            self._logger.exception("stop() is not implemented yet")
+            return Response.OK
 
     def _receive(self):
         '''
@@ -93,15 +101,15 @@ class CommunicatorNestTvb(BaseCommunicator):
         # The last two buffer entries are used for shared information
         # --> they replace the status_data variable from previous version
         # --> find more elegant solution?
-        self.__logger.info("setting up buffers")
+        self._logger.info("setting up buffers")
         
         # set buffer to 'ready to receive from nest'
         # self.__databuffer[-1] = 1
-        self.__data_buffer_manager.set_ready_at(index=-1)
+        self._data_buffer_manager.set_ready_at(index=-1)
         
         # marks the 'head' of the buffer
         # self.__databuffer[-2] = 0
-        self.__data_buffer_manager.set_head_at(index=-2)
+        self._data_buffer_manager.set_header_at(index=-2)
         
         # It seems the 'check' variable is used to receive tags from NEST,
         # i.e. ready for send...
@@ -111,7 +119,7 @@ class CommunicatorNestTvb(BaseCommunicator):
         shape = np.empty(1, dtype='i')    
         count = 0
         status_ = MPI.Status()
-        self.__logger.info("reading from buffer")
+        self._logger.info("reading from buffer")
         
         ###########################################################
         # TODO Refactor to move this functionality to appropriate location
@@ -126,19 +134,19 @@ class CommunicatorNestTvb(BaseCommunicator):
         SIMULATOR.LOCAL_MINIMUM_STEP_SIZE.name: 0.0}
         print(f'{pid_and_local_minimum_step_size}')
         ###########################################################
-        # self.__logger.info("NESTtoTVB -- consumer/receiver -- Rank:"+str(self.__comm_receiver.Get_rank()))
+        # self._logger.info("NESTtoTVB -- consumer/receiver -- Rank:"+str(self._comm_receiver.Get_rank()))
         while True:
             running_head = 0  # head of the buffer, reset after each iteration
             # TODO: This is still not correct. We only check for the Tag of the last rank.
             # IF all ranks send always the same tag in one iteration (simulation step)
             # then this works. But it should be handled differently!!!!
-            self.__comm_receiver.Recv([check, 1, MPI.CXX_BOOL], source=0, tag=MPI.ANY_TAG, status=status_)
+            self._comm_receiver.Recv([check, 1, MPI.CXX_BOOL], source=0, tag=MPI.ANY_TAG, status=status_)
             
             status_rank_0 = status_.Get_tag()
-            for i in range(1, self.__num_sending):
+            for i in range(1, self._num_sending):
                 # new: We do not care which source sends first, give MPI the freedom to send in whichever order.
-                # self.__comm_receiver.Recv([check, 1, MPI.CXX_BOOL], source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status_)
-                self.__comm_receiver.Recv([check, 1, MPI.CXX_BOOL], source=i, tag=MPI.ANY_TAG, status=status_)
+                # self._comm_receiver.Recv([check, 1, MPI.CXX_BOOL], source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status_)
+                self._comm_receiver.Recv([check, 1, MPI.CXX_BOOL], source=i, tag=MPI.ANY_TAG, status=status_)
                 # Check if     the state of the NEST is different between the ranks
                 if status_rank_0 != status_.Get_tag():
                     # Log the exception with traceback
@@ -154,34 +162,34 @@ class CommunicatorNestTvb(BaseCommunicator):
                 
                 # TODO: use MPI, remove the sleep
                 # # while self.__databuffer[-1] != 1:
-                while self.__data_buffer_manager.get_at(index=-1) != DATA_BUFFER_STATES.READY:
+                while self._data_buffer_manager.get_at(index=-1) != DATA_BUFFER_STATES.READY:
                     time.sleep(0.001)
                     pass
 
-                for source in range(self.__num_sending):
+                for source in range(self._num_sending):
                     # send 'ready' to the nest rank
-                    # self.__logger.info("send ready")
-                    self.__comm_receiver.Send([np.array(True,dtype='b'),MPI.BOOL],dest=source,tag=0)
+                    # self._logger.info("send ready")
+                    self._comm_receiver.Send([np.array(True,dtype='b'),MPI.BOOL],dest=source,tag=0)
                     # receive package size info
-                    self.__comm_receiver.Recv([shape, 1, MPI.INT], source=source, tag=0, status=status_)
-                    # self.__comm_receiver.Recv([shape, 1, MPI.INT], source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status_)
+                    self._comm_receiver.Recv([shape, 1, MPI.INT], source=source, tag=0, status=status_)
+                    # self._comm_receiver.Recv([shape, 1, MPI.INT], source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status_)
                     # NEW: receive directly into the buffer
-                    # self.__comm_receiver.Recv([self.__databuffer[head_:], MPI.DOUBLE], source=source, tag=0, status=status_)
-                    data_buffer = self.__data_buffer_manager.get_from(
+                    # self._comm_receiver.Recv([self.__databuffer[head_:], MPI.DOUBLE], source=source, tag=0, status=status_)
+                    data_buffer = self._data_buffer_manager.get_from(
                                     starting_index=running_head)
                             
-                    self.__comm_receiver.Recv([data_buffer, MPI.DOUBLE],
+                    self._comm_receiver.Recv([data_buffer, MPI.DOUBLE],
                                               source=source,
                                               tag=0,
                                               status=status_)
                     running_head += shape[0]  # move running head
                 # Mark as 'ready to do analysis'
                 # self.__databuffer[-1] = 0
-                self.__data_buffer_manager.set_header_at(index=-1)
+                self._data_buffer_manager.set_header_at(index=-1)
 
                 # important: head_ is first buffer index WITHOUT data.
                 # self.__databuffer[-2] = head_
-                self.__data_buffer_manager.set_custom_value_at(
+                self._data_buffer_manager.set_custom_value_at(
                                                         index=-2,
                                                         value=running_head)
                 # continue receiving the data
@@ -211,20 +219,20 @@ class CommunicatorNestTvb(BaseCommunicator):
         '''
         count = 0  # simulation/iteration step
         status_ = MPI.Status()
-        # self.__logger.info("NESTtoTVB -- producer/sender -- Rank:"+str(self.__comm_sender.Get_rank()))
+        # self._logger.info("NESTtoTVB -- producer/sender -- Rank:"+str(self._comm_sender.Get_rank()))
         while True:
             # TODO: this communication has the 'rank 0' problem described in the beginning
             accept = False
             #logger.info("Nest to TVB : wait to send " )
             while not accept:
-                req = self.__comm_sender.irecv(source=MPI.ANY_SOURCE,tag=MPI.ANY_TAG)
+                req = self._comm_sender.irecv(source=MPI.ANY_SOURCE,tag=MPI.ANY_TAG)
                 accept = req.wait(status_)
             #logger.info(" Nest to TVB : send data status : " +str(status_.Get_tag()))
             if status_.Get_tag() == 0:
                 # wait until the receiver has cleared the buffer, i.e. filled with new data
                 # TODO: use MPI, remove the sleep
                 # while self.__databuffer[-1] != 0:
-                while self.__data_buffer_manager.get_at(index=-1) != DATA_BUFFER_STATES.HEAD:
+                while self._data_buffer_manager.get_at(index=-1) != DATA_BUFFER_STATES.HEADER:
                     time.sleep(0.001)
                     pass
                 
@@ -232,26 +240,26 @@ class CommunicatorNestTvb(BaseCommunicator):
                 # times,data = mediator.spike_to_rate(self.__databuffer, count)
                 # TODO: change to inject the buffer in the wrapper method of mediator
                 # times, data = spikerate.spike_to_rate(count, self.__databuffer[-2], self.__databuffer)
-                times, data = self.__mediator.spike_to_rate(
+                times, data = self._mediator.spikes_to_rate(
                     count,
                     size_at_index=-2)
 
-                    # buffer_size=self.__data_buffer_manager.get_at(index=-2),
-                    # data_buffer=self.__data_buffer_manager.mpi_shared_memory_buffer)
+                    # buffer_size=self._data_buffer_manager.get_at(index=-2),
+                    # data_buffer=self._data_buffer_manager.mpi_shared_memory_buffer)
 
                 # Mark as 'ready to receive next simulation step'
                 # self.__databuffer[-1] = 1
-                self.__data_buffer_manager.set_ready_at(index=-1)
+                self._data_buffer_manager.set_ready_at(index=-1)
                 
                 ### OLD Code
                 #logger.info("Nest to TVB : send data :"+str(np.sum(data)) )
                 # time of sim step
-                self.__comm_sender.Send([times, MPI.DOUBLE], dest=status_.Get_source(), tag=0)
+                self._comm_sender.Send([times, MPI.DOUBLE], dest=status_.Get_source(), tag=0)
                 # send the size of the rate
                 size = np.array(int(data.shape[0]),dtype='i')
-                self.__comm_sender.Send([size,MPI.INT], dest=status_.Get_source(), tag=0)
+                self._comm_sender.Send([size,MPI.INT], dest=status_.Get_source(), tag=0)
                 # send the rates
-                self.__comm_sender.Send([data,MPI.DOUBLE], dest=status_.Get_source(), tag=0)
+                self._comm_sender.Send([data,MPI.DOUBLE], dest=status_.Get_source(), tag=0)
                 # increment the count
                 count += 1
                 # continue sending the data

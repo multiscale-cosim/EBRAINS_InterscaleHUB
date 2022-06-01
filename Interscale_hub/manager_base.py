@@ -13,14 +13,14 @@
 from abc import ABC, abstractmethod
 from mpi4py import MPI
 
-from EBRAINS_InterscaleHUB.refactored_modular.communicator_nest_to_tvb import CommunicatorNestTvb 
-from EBRAINS_InterscaleHUB.refactored_modular.communicator_tvb_to_nest import CommunicatorTvbNest 
-from EBRAINS_InterscaleHUB.refactored_modular.analyzer import Analyzer                                  
-from EBRAINS_InterscaleHUB.refactored_modular.transformer import Transformer       
-from EBRAINS_InterscaleHUB.refactored_modular.interscalehub_buffer import InterscaleHubBufferManager    
-from EBRAINS_InterscaleHUB.refactored_modular.interscaleHub_mediator import InterscaleHubMediator
-from EBRAINS_InterscaleHUB.refactored_modular.intercomm_manager import  IntercommManager as icm
-from EBRAINS_InterscaleHUB.refactored_modular.interscalehub_enums import DATA_EXCHANGE_DIRECTION
+from EBRAINS_InterscaleHUB.Interscale_hub.communicator_nest_to_tvb import CommunicatorNestTvb 
+from EBRAINS_InterscaleHUB.Interscale_hub.communicator_tvb_to_nest import CommunicatorTvbNest 
+from EBRAINS_InterscaleHUB.Interscale_hub.analyzer import Analyzer                                  
+from EBRAINS_InterscaleHUB.Interscale_hub.transformer import Transformer       
+from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_buffer_manager import InterscaleHubBufferManager    
+from EBRAINS_InterscaleHUB.Interscale_hub.interscaleHub_mediator import InterscaleHubMediator
+from EBRAINS_InterscaleHUB.Interscale_hub.intercomm_manager import  IntercommManager
+from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_EXCHANGE_DIRECTION
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
@@ -36,77 +36,77 @@ class InterscaleHubBaseManager(ABC):
         Init params, create buffer, open ports, accept connections
         '''
         
-        self.__log_settings = log_settings
-        self.__configurations_manager = configurations_manager
-        self.__logger = self.__configurations_manager.load_log_configurations(
+        self._log_settings = log_settings
+        self._configurations_manager = configurations_manager
+        self._logger = self._configurations_manager.load_log_configurations(
                                         name="InterscaleHub -- Base Manager",
-                                        log_configurations=self.__log_settings,
+                                        log_configurations=self._log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         
-        self.__parameters = parameters
+        self._parameters = parameters
         # 1) param stuff, create IntercommManager
         # MPI and IntercommManager
-        self.__intra_comm = MPI.COMM_WORLD  # INTRA communicator
-        self.__root = 0 # hardcoded!
-        self.__intercomm_manager = icm.IntercommManager(
-            self.__intra_comm,
-            self.__root,
-            self.__configurations_manager,
-            self.__log_settings)
+        self._intra_comm = MPI.COMM_WORLD  # INTRA communicator
+        self._root = 0 # hardcoded!
+        self._intercomm_manager = IntercommManager(
+            self._intra_comm,
+            self._root,
+            self._configurations_manager,
+            self._log_settings)
         
-        self.__path = self.__parameters['path']
+        self._path = self._parameters['path']
 
         # instances for mediation
         # Data Buffer Manager
-        self.__interscalehub_buffer_manager = InterscaleHubBufferManager(
-            self.__configurations_manager,
-            self.__log_settings)
-        self.__interscalehub_buffer = None
+        self._interscalehub_buffer_manager = InterscaleHubBufferManager(
+            self._configurations_manager,
+            self._log_settings)
+        self._interscalehub_buffer = None
         # InterscaleHub Transformer
-        self.__interscale_transformer = Transformer(
-            self.__parameters,
-            self.__configurations_manager,
-            self.__log_settings)
+        self._interscale_transformer = Transformer(
+            self._parameters,
+            self._configurations_manager,
+            self._log_settings)
         # Analyzer
-        self.__analyzer = Analyzer(
-            self.__parameters,
-            self.__configurations_manager,
-            self.__log_settings)
+        self._analyzer = Analyzer(
+            self._parameters,
+            self._configurations_manager,
+            self._log_settings)
         # Mediator
-        self.__mediator = InterscaleHubMediator(
-            self.__configurations_manager,
-            self.__log_settings,
-            self.__interscale_transformer,
-            self.__analyzer,
-            self.__interscalehub_buffer_manager)
+        self._mediator = InterscaleHubMediator(
+            self._configurations_manager,
+            self._log_settings,
+            self._interscale_transformer,
+            self._analyzer,
+            self._interscalehub_buffer_manager)
         
         # Simulators Managers
         # Case a: NEST to TVB Manager
         if direction == DATA_EXCHANGE_DIRECTION.NEST_TO_TVB:
-            self.__nest_tvb_communicator = CommunicatorNestTvb(
-                self.__configurations_manager,
-                self.__log_settings,
-                self.__interscalehub_buffer_manager,
-                self.__mediator)
+            self._nest_tvb_communicator = CommunicatorNestTvb(
+                self._configurations_manager,
+                self._log_settings,
+                self._interscalehub_buffer_manager,
+                self._mediator)
         # Case b: TVB to NEST Manager
         elif direction == DATA_EXCHANGE_DIRECTION.TVB_TO_NEST:
-            self.__tvb_nest_communicator = CommunicatorTvbNest(
-                self.__configurations_manager,
-                self.__log_settings,
+            self._tvb_nest_communicator = CommunicatorTvbNest(
+                self._configurations_manager,
+                self._log_settings,
                 parameters,
-                self.__interscalehub_buffer_manager,
-                self.__mediator)
+                self._interscalehub_buffer_manager,
+                self._mediator)
 
         # TODO: set via XML settings.
         # NOTE consider the scenario when handling the data larger than the buffer size
-        self.__max_events = 1000000  # max. expected number of events per step
+        self._max_events = 1000000  # max. expected number of events per step
 
-        self.__parameters = parameters.get_param(direction)
-        self.__transformer_id = 0  # NOTE: hardcoded
-        self.__id_proxy_nest_region = self.__parameters['id_nest_region']
-        self.__logger.info("initialized")
+        self._parameters = parameters
+        self._transformer_id = 0  # NOTE: hardcoded
+        self._id_proxy_nest_region = self._parameters['id_nest_region']
+        self._logger.info("initialized")
     
-    def __get_mpi_shared_memory_buffer(self, buffer_size):
+    def _get_mpi_shared_memory_buffer(self, buffer_size):
         '''
         Creates shared memory buffer for MPI One-sided-Communication.
         This is wrapper to buffer manager function which creates the mpi
@@ -114,13 +114,13 @@ class InterscaleHubBaseManager(ABC):
         '''
         
         # create an MPI shared memory buffer
-        self.__interscalehub_buffer =\
-            self.__interscalehub_buffer_manager.create_mpi_shared_memory_buffer(
+        self._interscalehub_buffer =\
+            self._interscalehub_buffer_manager.create_mpi_shared_memory_buffer(
                  buffer_size,
-                 self.__intra_comm)
-        return self.__interscalehub_buffer
+                 self._intra_comm)
+        return self._interscalehub_buffer
     
-    def __set_up_connection(self, path_to_port_file):
+    def _set_up_connection(self, path_to_port_file):
         '''
         Open ports and register connection details.
         Accept connection on ports and create INTER communicators.
@@ -130,7 +130,7 @@ class InterscaleHubBaseManager(ABC):
             - input = incoming simulation data
             - output = outgoing simulation data
         '''
-        return self.__intercomm_manager.open_port_accept_connection(
+        return self._intercomm_manager.open_port_accept_connection(
             path_to_port_file)
     
     @abstractmethod

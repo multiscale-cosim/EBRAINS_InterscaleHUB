@@ -11,10 +11,9 @@
 # Laboratory: Simulation Laboratory Neuroscience
 # Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
-from EBRAINS_InterscaleHUB.refactored_modular.delegation import (
-    elephant_plugin,
-    spike_rate_inter_conversion
-    )
+from EBRAINS_InterscaleHUB.Interscale_hub.delegation.elephant_plugin import ElephantPlugin
+from EBRAINS_InterscaleHUB.Interscale_hub.delegation.spike_rate_inter_conversion import SpikeRateConvertor
+
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
 
@@ -34,11 +33,11 @@ class ElephantDelegator:
                                         log_configurations=self._log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         # init members
-        self.spike_rate_conversion = spike_rate_inter_conversion.SpikeRateConvertor(
+        self.spike_rate_conversion = SpikeRateConvertor(
                                         param, 
                                         configurations_manager, 
                                         log_settings)
-        self.elephant_plugin = elephant_plugin.ElephantPlugin(
+        self.elephant_plugin = ElephantPlugin(
                                         configurations_manager, 
                                         log_settings)
         # dir member methods
