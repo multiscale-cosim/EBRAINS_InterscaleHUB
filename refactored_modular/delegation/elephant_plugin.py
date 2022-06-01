@@ -12,48 +12,41 @@
 # Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
 
+import numpy as np
 
-class Communicator():
+#NOTE plugin to be merged in Elephant main !?
+import elephant
+# TODO fork, clone and properly import the plugin
+# https://github.com/ojoenlanuca/online_elephant/blob/master/online_statistics.py
+import online_elephant 
+
+from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
+
+class ElephantPlugin:
     '''
     
     '''
-    def __init__(self, configurations_manager, log_settings, name, databuffer):
-        """Init of parameters
+    def __init__(self, configurations_manager, log_settings):
+        '''
         
-        Parameters
-        ----------
-        intracomm : Intra communicator
-
-        Returns
-        ------
-            return code as int to indicate an un/successful termination.
-        """
+        '''
         self._log_settings = log_settings
         self._configurations_manager = configurations_manager
         self.__logger = self._configurations_manager.load_log_configurations(
-                                        name=name,
+                                        name="Elephant -- ElephantPlugin",
                                         log_configurations=self._log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
-        self.__databuffer = databuffer
-
-    def start(self):
-        """Starts the pivot operations.
+        self.__logger.info("Initialised")
         
-        Parameters
-        ----------
-        intracomm : Intra communicator
-
-        Returns
-        ------
-            return code as int to indicate an un/successful termination.
-        """
+        
+    def online_statistics():
+        '''
+        TODO: expose the available statistic modules/functions 
+        '''
         raise NotImplementedError
-
-    def stop(self):
-        """Stops the pivot operations.
-
-        Returns
-        ------
-            return code as int to indicate an un/successful termination.
-        """
+    
+    def online_unitary_events():
+        '''
+        TODO: expose the unitary event function
+        '''
         raise NotImplementedError

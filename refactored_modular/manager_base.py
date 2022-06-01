@@ -15,7 +15,7 @@ from mpi4py import MPI
 
 from EBRAINS_InterscaleHUB.refactored_modular.communicator_nest_to_tvb import CommunicatorNestTvb 
 from EBRAINS_InterscaleHUB.refactored_modular.communicator_tvb_to_nest import CommunicatorTvbNest 
-from EBRAINS_InterscaleHUB.refactored_modular.Analyzer import Analyzer                                  
+from EBRAINS_InterscaleHUB.refactored_modular.analyzer import Analyzer                                  
 from EBRAINS_InterscaleHUB.refactored_modular.interscale_transformer import InterscaleTransformer       
 from EBRAINS_InterscaleHUB.refactored_modular.interscalehub_buffer import InterscaleHubBufferManager    
 from EBRAINS_InterscaleHUB.refactored_modular.interscaleHub_mediator import InterscaleHubMediator
@@ -43,6 +43,7 @@ class InterscaleHubBaseManager(ABC):
                                         log_configurations=self.__log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         
+        self.__parameters = parameters
         # 1) param stuff, create IntercommManager
         # MPI and IntercommManager
         self.__intra_comm = MPI.COMM_WORLD  # INTRA communicator
@@ -62,9 +63,15 @@ class InterscaleHubBaseManager(ABC):
             self.__log_settings)
         self.__interscalehub_buffer = None
         # InterscaleHub Transformer
-        self.__interscale_transformer = InterscaleTransformer()
+        self.__interscale_transformer = InterscaleTransformer(
+            self.__parameters,
+            self.__configurations_manager,
+            self.__log_settings)
         # Analyzer
-        self.__analyzer = Analyzer()
+        self.__analyzer = Analyzer(
+            self.__parameters,
+            self.__configurations_manager,
+            self.__log_settings)
         # Mediator
         self.__mediator = InterscaleHubMediator(
             self.__configurations_manager,
