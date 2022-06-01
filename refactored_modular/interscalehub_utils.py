@@ -12,7 +12,7 @@
 #
 # ------------------------------------------------------------------------------ 
 
-def log_exception(log_message, mpi_tag_received):
+def log_exception(logger, log_message, mpi_tag_received):
     try:
         # Raise RunTimeError exception
         raise RuntimeError
