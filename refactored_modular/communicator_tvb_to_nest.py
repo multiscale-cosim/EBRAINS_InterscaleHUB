@@ -16,9 +16,16 @@ from mpi4py import MPI
 import time
 import numpy as np
 
+<<<<<<< HEAD:refactored_modular/Communicator_tvb_to_nest.py
+from EBRAINS_InterscaleHUB.refactored_modular.Communicator import Communicator
+from EBRAINS_InterscaleHUB.refactored_modular import interscalehub_utils
+from EBRAINS_InterscaleHUB.refactored_modular import interscalehub_mediator as mediator
+#from EBRAINS_InterscaleHUB.Interscale_hub.transformer import generate_data
+=======
 from EBRAINS_InterscaleHUB.refactored_modular.communicator_base import BaseCommunicator
 from EBRAINS_InterscaleHUB.refactored_modular import interscalehub_utils
 from EBRAINS_InterscaleHUB.refactored_modular.interscalehub_enums import DATA_BUFFER_STATES
+>>>>>>> b7850ec8a33de877557fb4cdaa1c899d4efcaaf9:refactored_modular/communicator_tvb_to_nest.py
 
 from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
 
@@ -33,14 +40,42 @@ from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
 
 # TODO: rework on the receive and send loops (both, general coding style and usecase specifics)
 
+<<<<<<< HEAD:refactored_modular/Communicator_tvb_to_nest.py
+class CommunicatorTvbNest(Communicator):
+=======
 
 class CommunicatorTvbNest(BaseCommunicator):
+>>>>>>> b7850ec8a33de877557fb4cdaa1c899d4efcaaf9:refactored_modular/communicator_tvb_to_nest.py
     '''
     Implements the PivotBaseClass for abstracting the pivot operations and
     the underlying communication protocol. This class provides wrappers
     for receiving the data from TVB simulator and sending it to NEST simulator
     after processing/transforming to the required format.
     '''
+<<<<<<< HEAD:refactored_modular/Communicator_tvb_to_nest.py
+    def __init__(self, configurations_manager, log_settings, name, databuffer,
+                 intracomm, param, comm_receiver, comm_sender):
+        '''
+        '''
+        super().__init__(configurations_manager,
+                         log_settings,
+                         name,
+                         databuffer
+                         )
+        
+        # Parameter for transformation and analysis
+        self.__param = param
+        # INTERcommunicator
+        # TODO: Revisit the protocol to TVB and NEST
+        # TODO: rank 0 and rank 1 hardcoded
+        if intracomm.Get_rank() == 1:
+            self.__comm_receiver = comm_receiver
+            self.__num_sending = self.__comm_receiver.Get_remote_size()
+        elif intracomm.Get_rank() == 0:    
+            self.__comm_sender = comm_sender
+            self.__num_receiving = self.__comm_sender.Get_remote_size()
+        self.__logger.info("Initialised")
+=======
     def __init__(self, configurations_manager, log_settings,
                  parameters, data_buffer_manager, mediator):
         '''
@@ -59,6 +94,7 @@ class CommunicatorTvbNest(BaseCommunicator):
         # Parameter for transformation and analysis
         self.__parameters = parameters
         self.__logger.info("Initialized")
+>>>>>>> b7850ec8a33de877557fb4cdaa1c899d4efcaaf9:refactored_modular/communicator_tvb_to_nest.py
 
     def start(self, intra_communicator, inter_comm_receiver, inter_comm_sender):
         '''
@@ -76,6 +112,11 @@ class CommunicatorTvbNest(BaseCommunicator):
             self.__comm_sender = inter_comm_sender
             self.__num_receiving = self.__comm_sender.Get_remote_size()
             return self._send()
+<<<<<<< HEAD:refactored_modular/Communicator_tvb_to_nest.py
+        elif intracomm.Get_rank() == 1: #  Science/analyse and sender to TVB, rank 1
+            return self._receive()
+=======
+>>>>>>> b7850ec8a33de877557fb4cdaa1c899d4efcaaf9:refactored_modular/communicator_tvb_to_nest.py
 
         # Rank-1 will transform and send the data
         elif intra_communicator.Get_rank() == 1:
@@ -203,9 +244,16 @@ class CommunicatorTvbNest(BaseCommunicator):
                     pass
 
                 # NOTE: calling the mediator which calls the corresponding transformer functions
+<<<<<<< HEAD:refactored_modular/Communicator_tvb_to_nest.py
+                spikes_times = mediator.rate_to_spike(self.__databuffer)
+                
+                # Mark as 'ready to receive next simulation step'
+                self.__databuffer[-1] = 1
+=======
                 # TODO: change to inject the buffer in the wrapper method of mediator
                 # spikes_times = mediator.rate_to_spike(self.__data_buffer_manager.mpi_shared_memory_buffer)
                 spikes_times = self.__mediator.rate_to_spike()
+>>>>>>> b7850ec8a33de877557fb4cdaa1c899d4efcaaf9:refactored_modular/communicator_tvb_to_nest.py
                 
                 # Mark as 'ready to receive next simulation step'
                 # self.__databuffer[-1] = 1
@@ -261,7 +309,11 @@ class CommunicatorTvbNest(BaseCommunicator):
         
 '''
     def _transform(self):
+<<<<<<< HEAD:refactored_modular/Communicator_tvb_to_nest.py
+        generator = generate_data(self.__param)
+=======
         generator = generate_data(self.__parameters)
+>>>>>>> b7850ec8a33de877557fb4cdaa1c899d4efcaaf9:refactored_modular/communicator_tvb_to_nest.py
         # NOTE: count is a hardcoded '0'. Why?
         # time_step are the first two doubles in the buffer
         # rate is a double array, which size is stored in the second to last index

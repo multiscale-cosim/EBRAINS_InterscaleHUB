@@ -33,7 +33,7 @@ class ElephantPlugin:
         self._log_settings = log_settings
         self._configurations_manager = configurations_manager
         self.__logger = self._configurations_manager.load_log_configurations(
-                                        name="ElephantPlugin",
+                                        name="Elephant -- ElephantPlugin",
                                         log_configurations=self._log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         self.__logger.info("Initialised")

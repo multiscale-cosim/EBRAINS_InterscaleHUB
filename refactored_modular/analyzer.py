@@ -13,14 +13,14 @@
 # ------------------------------------------------------------------------------
 
 
-from EBRAINS_InterscaleHUB.refactored_modular.wrapper.elephant_wrapper import ElephantWrapper
+from EBRAINS_InterscaleHUB.refactored_modular.elephant_delegator import ElephantDelegator
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
-class Analyzer():
+class Analyzer:
     '''
     Main class for analysis of data.
     '''
-    def __init__(self,configurations_manager, log_settings):
+    def __init__(self, param, configurations_manager, log_settings):
         """
         """
         self._log_settings = log_settings
@@ -29,9 +29,12 @@ class Analyzer():
                                         name="Analyzer",
                                         log_configurations=self._log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
+        
+        self.__elephant_delegator = ElephantDelegator(param, configurations_manager, log_settings)
         self.__logger.info("Initialised")
 
-    def analyze(self, data, time_start, time_stop, **kwargs):
+    
+    def spiketrains_to_rate(self, count, spiketrains):
         """analyzes the data for a given time interval and returns the results.
         
         # TODO Discuss how to handle and call the available Analysis wrappers
@@ -59,4 +62,4 @@ class Analyzer():
         ------
             returns the analyzed data
         """
-        raise NotImplementedError
+        return self.__elephant_delegator.spiketrains_to_rate(count, spiketrains)
