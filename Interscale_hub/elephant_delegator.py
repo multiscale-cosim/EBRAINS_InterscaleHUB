@@ -18,14 +18,14 @@ from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_dir
 
 
 class ElephantDelegator:
-    '''
+    """
     NOTE: some functionalities only had on attribute/method, e.g. rate_to_spike.
     -> new Class "spike_rate_conversion" contains all related functionalities.
-    '''
-    def __init__(self, param, configurations_manager, log_settings):
-        '''
-        
-        '''
+    """
+    def __init__(self, param, configurations_manager, log_settings, sci_params=None):
+        """
+
+        """
         self._log_settings = log_settings
         self._configurations_manager = configurations_manager
         self.__logger = self._configurations_manager.load_log_configurations(
@@ -36,7 +36,8 @@ class ElephantDelegator:
         self.spike_rate_conversion = SpikeRateConvertor(
                                         param, 
                                         configurations_manager, 
-                                        log_settings)
+                                        log_settings,
+                                        sci_params=sci_params)
         self.elephant_plugin = ElephantPlugin(
                                         configurations_manager, 
                                         log_settings)
@@ -46,8 +47,8 @@ class ElephantDelegator:
         self.__logger.info("Initialised")
 
     def __getattr__(self, func):
-        '''
-        '''
+        """
+        """
         # TODO add support to access the attributes of the classes to be delegated
         def method(*args):
             if func in self.spikerate_methods:
