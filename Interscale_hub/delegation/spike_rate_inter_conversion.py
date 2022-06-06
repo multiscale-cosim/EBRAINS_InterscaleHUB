@@ -14,39 +14,51 @@
 import numpy as np
 
 from quantities import ms, Hz
-from neo.core import AnalogSignal,SpikeTrain
+from neo.core import AnalogSignal, SpikeTrain
 
-from elephant.statistics import instantaneous_rate, mean_firing_rate
+from elephant.statistics import instantaneous_rate  # , mean_firing_rate
 from elephant.kernels import RectangularKernel
-from elephant.spike_train_generation import inhomogeneous_poisson_process, homogeneous_poisson_process
+
+#
+# TO BE DONE:
+# 'inhomogeneous_poisson_process' is deprecated; use 'NonStationaryPoissonProcess'.
+# 'homogeneous_poisson_process' is deprecated; use 'StationaryPoissonProcess'.
+from elephant.spike_train_generation import inhomogeneous_poisson_process  # , homogeneous_poisson_process
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
 
 class SpikeRateConvertor:
-    
-    def __init__(self, param, configurations_manager, log_settings):
+
+    def __init__(self, param, configurations_manager, log_settings, sci_params=None):
         self.__logger = configurations_manager.load_log_configurations(
-                                        name="Elephant -- spike_rate_conversion",
-                                        log_configurations=log_settings,
-                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)  
-        
-        # NOTE:params spike to rate
+            name="Elephant -- spike_rate_conversion",
+            log_configurations=log_settings,
+            target_directory=DefaultDirectories.SIMULATION_RESULTS)
+
+        # NOTE: params spike to rate
         # time of synchronization between 2 run
-        self.__time_synch = param['time_synchronization']
-        
+        # to_be_removed: self.__time_synch = param['time_synchronization']
+        self.__time_synch = sci_params.time_syncronization
+
         # the resolution of the integrator
-        self.__dt = param['resolution']
-        self.__nb_neurons = param['nb_neurons'][0]
-        
+        # to be removed: self.__dt = param['resolution']
+        self.__dt = sci_params.dt
+
+        # to be removed: self.__nb_neurons = param['nb_neurons'][0]
+        self.__nb_neurons = sci_params.nb_neurons
+
         # id of transformer is hardcoded to 0
         self.__first_id = param['id_first_neurons'][0]
-        
+
         # NOTE:params rate to spike
         # number of spike generators
-        self.__nb_spike_generator = param['nb_neurons']
+        # POD: is a numpy array required?
+        # to be removed: self.__nb_spike_generator = param['nb_neurons']
+        self.__nb_spike_generator = sci_params.nb_neurons
+
         # self.__path = param['path'] + "/transformation/"
-        
+
         # # variable for saving values
         # self.__save_spike = bool(param['save_spikes'])
         # if self.__save_spike:
@@ -54,12 +66,13 @@ class SpikeRateConvertor:
         # self.__save_rate = bool(param['save_rate'])
         # if self.__save_rate:
         #     self.__save_rate_buf = None
-        
+
         # number of synapsis
-        self.__nb_synapse = int(param["nb_brain_synapses"])
-        
+        # to be removed: self.__nb_synapse = int(param["nb_brain_synapses"])
+        self.__nb_synapse = sci_params.nb_brain_synapses
+
         self.__logger.info("Initialised")
-    
+
     def spike_to_spiketrains(self, count, data_size, data_buffer):
         """
         get the spike time from the buffer and order them by neurons
@@ -91,17 +104,14 @@ class SpikeRateConvertor:
         for i in range(self.__nb_neurons):
             if len(spiketrains[i]) > 1:
                 spiketrains[i] = SpikeTrain(np.concatenate(spiketrains[i]) * ms,
-                                               t_start=np.around(count * self.__time_synch, decimals=2),
-                                               t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
-                                               
-            
+                                            t_start=np.around(count * self.__time_synch, decimals=2),
+                                            t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
             else:
                 spiketrains[i] = SpikeTrain(spiketrains[i] * ms,
-                                               t_start=np.around(count * self.__time_synch, decimals=2),
-                                               t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
+                                            t_start=np.around(count * self.__time_synch, decimals=2),
+                                            t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
         return spiketrains
-    
-    
+
     def spiketrains_to_rate(self, count, spiketrains):
         """
         implements the abstract method for the transformation of the
@@ -113,12 +123,7 @@ class SpikeRateConvertor:
             counter of the number of time of the transformation (identify the
             timing of the simulation)
 
-        size_buffer: int
-            size of the data to be read from the buffer for transformation
-
-        buffer_of_spikes: Any  # e.g. 1D numpy array
-            buffer which contains spikes (id of devices, id of neurons and
-            spike times)
+        spiketrains:
 
         Returns
         ------
@@ -126,6 +131,13 @@ class SpikeRateConvertor:
                 tuple of interval and the rate for the interval if data is
                 transformed successfully
         """
+        # size_buffer: int
+        #     size of the data to be read from the buffer for transformation
+        #
+        # buffer_of_spikes: Any  # e.g. 1D numpy array
+        #     buffer which contains spikes (id of devices, id of neurons and
+        #     spike times)
+
         rates = instantaneous_rate(spiketrains,
                                    t_start=np.around(count * self.__time_synch, decimals=2) * ms,
                                    t_stop=np.around((count + 1) * self.__time_synch, decimals=2) * ms,
@@ -134,7 +146,6 @@ class SpikeRateConvertor:
         times = np.array([count * self.__time_synch, (count + 1) * self.__time_synch], dtype='d')
         return times, rate
 
-    
     def rate_to_spikes(self, time_step, data_buffer):
         """
         implements the abstract method for the transformation of the
@@ -142,23 +153,24 @@ class SpikeRateConvertor:
 
         Parameters
         ----------
-        count : int
-            counter of the number of time of the transformation (identify the
-            timing of the simulation)
 
         time_step: int
            time interval for the signal
 
-        rate: Any  # e.g. 1D numpy array
-            Spikes rate
-
+        data_buffer:
         Returns
         ------
             spikes_train: list
                 returns spikes train if data is transformed successfully
         """
-        rate = data_buffer # NOTE: match argument names
-        
+        # count : int
+        #     counter of the number of time of the transformation (identify the
+        #     timing of the simulation)
+        # rate: Any  # e.g. 1D numpy array
+        #     Spikes rate
+
+        rate = data_buffer  # NOTE: match argument names
+
         rate *= self.__nb_synapse  # rate of poisson generator ( due property of poisson process)
         rate += 1e-12
         rate = np.abs(rate)  # avoid rate equals to zeros
@@ -167,11 +179,15 @@ class SpikeRateConvertor:
         self.__logger.debug(f"rate: {rate}, signal: {signal}, time_step: {time_step}")
         spikes_train = []
         # generate individual spike trains
-        for i in range(self.__nb_spike_generator[0]):
+        # to be removed or POD: for i in range(self.__nb_spike_generator[0]):
+        for i in range(self.__nb_spike_generator):
+            #
+            # TO BE DONE: 'inhomogeneous_poisson_process' is deprecated; use 'NonStationaryPoissonProcess'.
+            #
             spikes_train.append(np.around(np.sort(inhomogeneous_poisson_process(signal, as_array=True)), decimals=1))
         return spikes_train
 
-        
+
 '''
 #NOTE: NEW VERSIONS of spike-rate converions.
 # TODO confirm: params (np_synapse, ...) are not needed anymore.

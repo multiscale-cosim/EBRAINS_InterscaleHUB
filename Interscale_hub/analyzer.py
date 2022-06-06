@@ -16,27 +16,33 @@
 from EBRAINS_InterscaleHUB.Interscale_hub.elephant_delegator import ElephantDelegator
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
+
 class Analyzer:
-    '''
+    """
     Main class for analysis of data. It wraps the functionality of the libraries
     such as ELEPHANT for analysis.
 
     NOTE this wrapper class exposes only the functionality that is supported by
     InterscaleHub.
-    '''
-    def __init__(self, param, configurations_manager, log_settings):
+    """
+
+    def __init__(self, param, configurations_manager, log_settings, sci_params=None):
         """
         """
         self._log_settings = log_settings
         self._configurations_manager = configurations_manager
         self.__logger = self._configurations_manager.load_log_configurations(
-                                        name="Analyzer",
-                                        log_configurations=self._log_settings,
-                                        target_directory=DefaultDirectories.SIMULATION_RESULTS)
-        
-        self.__elephant_delegator = ElephantDelegator(param, configurations_manager, log_settings)
+            name="Analyzer",
+            log_configurations=self._log_settings,
+            target_directory=DefaultDirectories.SIMULATION_RESULTS)
+
+        self.__elephant_delegator = ElephantDelegator(param,
+                                                      configurations_manager,
+                                                      log_settings,
+                                                      sci_params=sci_params)
+
         self.__logger.info("Initialized")
-    
+
     def spiketrains_to_rate(self, count, spike_trains):
         """analyzes the data for a given time interval and returns the results.
 
