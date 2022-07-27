@@ -76,20 +76,20 @@ class SpikeRateConvertor:
     def spike_to_spiketrains(self, count, data_size, data_buffer):
         """
         get the spike time from the buffer and order them by neurons
-
+        
         Parameters
         ----------
         count : int
             counter of the number of time of the transformation (identify the
             timing of the simulation)
-
+        
         data_size: int
             size of the data to be read from the buffer for transformation
-
+        
         data_buffer: Any  # e.g. 1D numpy array
             buffer which contains spikes (id of devices, id of neurons and
             spike times)
-
+        
         Returns
         ------
             spiketrains: list
@@ -116,15 +116,15 @@ class SpikeRateConvertor:
         """
         implements the abstract method for the transformation of the
         spike trains to rate.
-
+        
         Parameters
         ----------
         count : int
             counter of the number of time of the transformation (identify the
             timing of the simulation)
-
+        
         spiketrains:
-
+        
         Returns
         ------
             times, rate: numpy array, float
@@ -150,14 +150,14 @@ class SpikeRateConvertor:
         """
         implements the abstract method for the transformation of the
         rate to spikes.
-
+        
         Parameters
         ----------
-
         time_step: int
            time interval for the signal
 
         data_buffer:
+
         Returns
         ------
             spikes_train: list

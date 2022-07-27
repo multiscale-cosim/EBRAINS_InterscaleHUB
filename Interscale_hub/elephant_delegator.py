@@ -24,7 +24,6 @@ class ElephantDelegator:
     """
     def __init__(self, param, configurations_manager, log_settings, sci_params=None):
         """
-
         """
         self._log_settings = log_settings
         self._configurations_manager = configurations_manager
@@ -38,6 +37,7 @@ class ElephantDelegator:
                                         configurations_manager, 
                                         log_settings,
                                         sci_params=sci_params)
+
         self.elephant_plugin = ElephantPlugin(
                                         configurations_manager, 
                                         log_settings)

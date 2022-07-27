@@ -155,7 +155,7 @@ class InterscaleHubBaseManager(ABC):
         """
         Receive stop command.
         Call stop on the pivot operation loop (receiving and sending)
-
+        
         TODO: add error handling and fail checks
         """
         raise NotImplementedError

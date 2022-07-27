@@ -183,7 +183,6 @@ class TvbToNestManager(InterscaleHubBaseManager):
         """
         implementation of the abstract method to conclude the pivot operations
         and stop exchanging the data.
-
         TODO: add error handling and fail checks
         """
         self.__logger.info("Stop InterscaleHub and disconnect...")

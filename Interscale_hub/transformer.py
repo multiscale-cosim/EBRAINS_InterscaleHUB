@@ -43,7 +43,7 @@ class Transformer:
     
     def spike_to_spiketrains(self, count, data_size, data_buffer):
         """Transforms the data from one format to another .
-
+        
         Parameters
         ----------
         count: int
@@ -64,7 +64,7 @@ class Transformer:
 
     def rate_to_spikes(self, time_step, data_buffer):
         """Transforms the data from one format to another .
-
+        
         Parameters
         ----------
         time_step: [int, int]
@@ -72,14 +72,9 @@ class Transformer:
         
         data_buffer: MPI shared memory window
             buffer contains the rate to be converted into spikes
-
+        
         Returns
         ------
             returns the spike trains from rate
         """
         return self.__elephant_delegator.rate_to_spikes(time_step, data_buffer)
-    
-    
-    
-    
-    
