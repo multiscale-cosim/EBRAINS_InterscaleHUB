@@ -18,14 +18,14 @@ from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_dir
 
 
 class Transformer:
-    '''
+    """
     Transforms the data to change the scales. It wraps the functionality of the libraries
     such as ELEPHANT for transformation.
 
     NOTE this wrapper class exposes only the functionality that is supported by
     InterscaleHub.
-    '''
-    def __init__(self, param, configurations_manager, log_settings):
+    """
+    def __init__(self, param, configurations_manager, log_settings, sci_params=None):
         """
         """
         self._log_settings = log_settings
@@ -35,12 +35,15 @@ class Transformer:
                                         log_configurations=self._log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         
-        self.__elephant_delegator = ElephantDelegator(param, configurations_manager, log_settings)
+        self.__elephant_delegator = ElephantDelegator(param,
+                                                      configurations_manager,
+                                                      log_settings,
+                                                      sci_params=sci_params)
         self.__logger.info("Initialised")
     
     def spike_to_spiketrains(self, count, data_size, data_buffer):
         """Transforms the data from one format to another .
-
+        
         Parameters
         ----------
         count: int
@@ -61,7 +64,7 @@ class Transformer:
 
     def rate_to_spikes(self, time_step, data_buffer):
         """Transforms the data from one format to another .
-
+        
         Parameters
         ----------
         time_step: [int, int]
@@ -69,14 +72,9 @@ class Transformer:
         
         data_buffer: MPI shared memory window
             buffer contains the rate to be converted into spikes
-
+        
         Returns
         ------
             returns the spike trains from rate
         """
         return self.__elephant_delegator.rate_to_spikes(time_step, data_buffer)
-    
-    
-    
-    
-    

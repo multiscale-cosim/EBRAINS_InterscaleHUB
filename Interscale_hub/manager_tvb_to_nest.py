@@ -23,16 +23,22 @@ from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_dir
 
 
 class TvbToNestManager(InterscaleHubBaseManager):
-    '''
+    """
     Implements the InterscaleHubBaseManager to
     1) Interact with InterscaleHub Facade to steer the execution
     2) Manage the InterscaleHub functionality.
-    '''
-    def __init__(self, parameters, direction, configurations_manager, log_settings):
-        '''
-        Init params, create buffer, open ports, accept connections
-        '''
-        
+    """
+    def __init__(self, parameters, direction, configurations_manager, log_settings,
+                 sci_params_xml_path_filename=''):
+        """
+            Init params, create buffer, open ports, accept connections
+        :param parameters:
+        :param direction: <-- # TO BE DONE: Check whether it could be removed since it is not being used
+        :param configurations_manager:
+        :param log_settings:
+        :param sci_params_xml_path_filename:
+        """
+
         self.__log_settings = log_settings
         self.__configurations_manager = configurations_manager
         self.__logger = self.__configurations_manager.load_log_configurations(
@@ -45,11 +51,13 @@ class TvbToNestManager(InterscaleHubBaseManager):
         super().__init__(parameters,
                          DATA_EXCHANGE_DIRECTION.TVB_TO_NEST,
                          self.__configurations_manager,
-                         self.__log_settings)
+                         self.__log_settings,
+                         sci_params_xml_path_filename=sci_params_xml_path_filename)
         self.__tvb_nest_communicator = None
-        # TODO: set via XML settings? POD
-        self.__buffersize = 2 + self._max_events # 2 doubles: [start_time,end_time] of simulation step
-        
+        # done: TODO: set via XML settings? POD
+        # self.__buffersize = 2 + self._max_events  # 2 doubles: [start_time,end_time] of simulation step
+        self.__buffersize = self._sci_params.max_events + self._sci_params.tvb_buffer_size_factor
+
         # path to receive_from_tvb (TVB)
         self.__logger.debug("reading port info for receiving from TVB...")
         self.__input_path = self.__get_path_to_TVB()
@@ -70,17 +78,16 @@ class TvbToNestManager(InterscaleHubBaseManager):
         self.__logger.info("data channels open and ready.")
         
     def __data_channel_setup(self):
-        '''
+        """
         Open ports and register connection details.
         Accept connection on ports and create INTER communicators.
-        
         MVP: register = write port details to file.
-        MVP: Two connections 
+        MVP: Two connections
             - input = incoming simulation data
             - output = outgoing simulation data
-        '''
+        """
         # NOTE: create port files and make connection
-        # In Demo example: producer/Consumer are inhertied from mpi_io_extern,
+        # In Demo example: producer/Consumer are inherited from mpi_io_extern,
         # and then they are started as threads which then call mpi_io_extern run() method
         # which then calls make_connection() method
 
@@ -93,20 +100,20 @@ class TvbToNestManager(InterscaleHubBaseManager):
             self.__output_comm = None
 
     def __get_path_to_TVB(self):
-        '''
+        """
         helper function to get the path to file containing the connection
         details of TVB for receiving the data from it.
-        '''
+        """
         # NOTE transformer id is hardcoded as 0 in base class
         return [
             self._path + "/transformation/receive_from_tvb/" + 
             str(self._id_proxy_nest_region[self._transformer_id]) + ".txt"]
 
     def __get_path_to_spike_generators(self):
-        '''
+        """
         helper function to get the path to file containing the connection
         details of spike detectors (NEST) for sending the data.
-        '''
+        """
         # wait until NEST writes the spike generators ids
         while not os.path.exists(self._path + '/nest/spike_generator.txt.unlock'):
             self.__logger.info("spike generator ids not found yet, retry in 1 second")
@@ -143,11 +150,11 @@ class TvbToNestManager(InterscaleHubBaseManager):
         return path_to_spike_generators
 
     def start(self):
-        '''
+        """
         implementation of abstract method to start transformation and
         exchanging the data with TVB and NEST.
-        '''
-        self.__logger.info("Start data transfer and usecase science...")
+        """
+        self.__logger.info("Start data transfer and use case science...")
         
         # initialize Communicator
         self.__tvb_nest_communicator = CommunicatorTvbNest(
@@ -171,12 +178,11 @@ class TvbToNestManager(InterscaleHubBaseManager):
             return Response.OK
 
     def stop(self):
-        '''
+        """
         implementation of the abstract method to conclude the pivot operations
         and stop exchanging the data.
-
         TODO: add error handling and fail checks
-        '''
+        """
         self.__logger.info("Stop InterscaleHub and disconnect...")
         self.__tvb_nest_communicator.stop()
         if self._intra_comm.Get_rank() == 0:
