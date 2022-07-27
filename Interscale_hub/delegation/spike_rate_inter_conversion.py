@@ -155,9 +155,9 @@ class SpikeRateConvertor:
         ----------
         time_step: int
            time interval for the signal
-        
+
         data_buffer:
-        
+
         Returns
         ------
             spikes_train: list

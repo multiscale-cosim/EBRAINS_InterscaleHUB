@@ -32,6 +32,7 @@ class TvbToNestManager(InterscaleHubBaseManager):
                  sci_params_xml_path_filename=''):
         """
             Init params, create buffer, open ports, accept connections
+
         :param parameters:
         :param direction: <-- # TO BE DONE: Check whether it could be removed since it is not being used
         :param configurations_manager:
@@ -81,6 +82,7 @@ class TvbToNestManager(InterscaleHubBaseManager):
         """
         Open ports and register connection details.
         Accept connection on ports and create INTER communicators.
+
         MVP: register = write port details to file.
         MVP: Two connections
             - input = incoming simulation data

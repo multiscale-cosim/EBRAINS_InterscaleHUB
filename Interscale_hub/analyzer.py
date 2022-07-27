@@ -18,14 +18,14 @@ from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_dir
 
 
 class Analyzer:
-    '''
+    """
     Main class for analysis of data. It wraps the functionality of the libraries
     such as ELEPHANT for analysis.
 
     NOTE this wrapper class exposes only the functionality that is supported by
     InterscaleHub.
-    '''
-    
+    """
+
     def __init__(self, param, configurations_manager, log_settings, sci_params=None):
         """
         """
@@ -42,7 +42,7 @@ class Analyzer:
                                                       sci_params=sci_params)
 
         self.__logger.info("Initialized")
-    
+
     def spiketrains_to_rate(self, count, spike_trains):
         """analyzes the data for a given time interval and returns the results.
 

@@ -133,6 +133,7 @@ class InterscaleHubBaseManager(ABC):
         """
         Open ports and register connection details.
         Accept connection on ports and create INTER communicators.
+
         MVP: register = write port details to file.
         MVP: Two connections
             - input = incoming simulation data
@@ -154,6 +155,7 @@ class InterscaleHubBaseManager(ABC):
         """
         Receive stop command.
         Call stop on the pivot operation loop (receiving and sending)
+        
         TODO: add error handling and fail checks
         """
         raise NotImplementedError

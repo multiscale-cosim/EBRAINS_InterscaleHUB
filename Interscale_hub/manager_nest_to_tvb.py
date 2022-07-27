@@ -75,6 +75,7 @@ class NestToTvbManager(InterscaleHubBaseManager):
         """
         Open ports and register connection details.
         Accept connection on ports and create INTER communicators.
+
         MVP: register = write port details to file.
         MVP: Two connections
             - input = incoming simulation data
@@ -164,6 +165,7 @@ class NestToTvbManager(InterscaleHubBaseManager):
         """
         implementation of the abstract method to conclude the pivot operations
         and stop exchanging the data.
+
         TODO: add error handling and fail checks
         """
         self.__logger.info("Stop InterscaleHub and disconnect...")
