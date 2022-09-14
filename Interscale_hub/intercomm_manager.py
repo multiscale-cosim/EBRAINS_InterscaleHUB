@@ -60,18 +60,23 @@ class IntercommManager:
         #if self.__comm.Get_rank() == self.__root:
         # Write file configuration of the port
         port = MPI.Open_port(self.__info)
+        ##############################################################
+        # TODO get rid of for loop
+        # TODO don't write to files
+        # TODO print the port information in the defined format
         for path in paths:
             fport = open(path, "w+")
             fport.write(port)
             fport.close()
             pathlib.Path(path + '.unlock').touch()
+        ##############################################################
                 # self.__logger.info("Port opened and file created:" + path +
                 #             "on rank" + str(self.__comm.Get_rank()))
         #else:
         #    port = None
         #port = self.__comm.bcast(port, self.__root) # avoid issues with mpi rank information.
         self.__logger.info('Rank ' + str(self.__comm.Get_rank()) + ' accepting connection on: ' + port)
-        inter_comm = comm.Accept(port, self.__info, root) 
+        inter_comm = comm.Accept(port, self.__info, root)
         self.__logger.info('Simulation client connected to' + str(inter_comm.Get_rank()))        
         return inter_comm, port
 

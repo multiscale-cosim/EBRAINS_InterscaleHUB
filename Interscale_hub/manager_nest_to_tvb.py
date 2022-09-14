@@ -54,13 +54,17 @@ class NestToTvbManager(InterscaleHubBaseManager):
         # to be removed: self.__buffersize = self._max_events * 3  # 3 doubles per event
         self.__buffersize = self._sci_params.max_events * self._sci_params.nest_buffer_size_factor
 
+        ##############################################################
+        # TODO no need to get paths where to save port info
+
         # path_to_spike_detectors (NEST)
         self.__logger.debug("reading port info for spike detectors...")
         self.__input_path = self.__get_path_to_spike_detectors()
         # path to send_to_tvb (TVB)
         self.__logger.debug("reading port info for sending to TVB...")
         self.__output_path = self.__get_path_to_TVB()
-
+        ##############################################################
+        
         # 2) create buffer in self.__databuffer
         self.__logger.debug("Creating MPI shared memory Buffer...")
         self.__databuffer = self._get_mpi_shared_memory_buffer(self.__buffersize)
