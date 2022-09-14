@@ -59,13 +59,16 @@ class TvbToNestManager(InterscaleHubBaseManager):
         # self.__buffersize = 2 + self._max_events  # 2 doubles: [start_time,end_time] of simulation step
         self.__buffersize = self._sci_params.max_events + self._sci_params.tvb_buffer_size_factor
 
+        ##############################################################
+        # TODO no need to get paths where to save port info
+
         # path to receive_from_tvb (TVB)
         self.__logger.debug("reading port info for receiving from TVB...")
         self.__input_path = self.__get_path_to_TVB()
         # path to spike_generators (NEST)
         self.__logger.debug("reading port info for spike generators...")
         self.__output_path = self.__get_path_to_spike_generators()
-
+        ##############################################################
         self.__logger.debug("Init Params done.")
         
         # 2) create buffer in self.__databuffer
