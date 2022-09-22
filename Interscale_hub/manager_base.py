@@ -129,7 +129,7 @@ class InterscaleHubBaseManager(ABC):
                 self._intra_comm)
         return self._interscalehub_buffer
 
-    def _set_up_connection(self, path_to_port_file):
+    def _set_up_connection(self, path_to_port_file=None):
         """
         Open ports and register connection details.
         Accept connection on ports and create INTER communicators.

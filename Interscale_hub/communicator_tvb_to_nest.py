@@ -184,12 +184,12 @@ class CommunicatorTvbNest(BaseCommunicator):
         #NOTE As per protocol, it should be the response message of 'init'
         # command, and should return the PID and the port information
 
-        import os
-        from EBRAINS_RichEndpoint.Application_Companion.common_enums import INTEGRATED_SIMULATOR_APPLICATION as SIMULATOR
-        pid_and_local_minimum_step_size = \
-        {SIMULATOR.PID.name: os.getpid(),
-        SIMULATOR.LOCAL_MINIMUM_STEP_SIZE.name: 0.0}
-        print(f'{pid_and_local_minimum_step_size}')
+        # import os
+        # from EBRAINS_RichEndpoint.Application_Companion.common_enums import INTEGRATED_SIMULATOR_APPLICATION as SIMULATOR
+        # pid_and_local_minimum_step_size = \
+        # {SIMULATOR.PID.name: os.getpid(),
+        # SIMULATOR.LOCAL_MINIMUM_STEP_SIZE.name: 0.0}
+        # print(f'{pid_and_local_minimum_step_size}')
         ###########################################################
         
         while True:

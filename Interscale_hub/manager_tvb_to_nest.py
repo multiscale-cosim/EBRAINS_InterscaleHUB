@@ -63,11 +63,11 @@ class TvbToNestManager(InterscaleHubBaseManager):
         # TODO no need to get paths where to save port info
 
         # path to receive_from_tvb (TVB)
-        self.__logger.debug("reading port info for receiving from TVB...")
-        self.__input_path = self.__get_path_to_TVB()
-        # path to spike_generators (NEST)
-        self.__logger.debug("reading port info for spike generators...")
-        self.__output_path = self.__get_path_to_spike_generators()
+        # self.__logger.debug("reading port info for receiving from TVB...")
+        # self.__input_path = self.__get_path_to_TVB()
+        # # path to spike_generators (NEST)
+        # self.__logger.debug("reading port info for spike generators...")
+        # self.__output_path = self.__get_path_to_spike_generators()
         ##############################################################
         self.__logger.debug("Init Params done.")
         
@@ -98,10 +98,10 @@ class TvbToNestManager(InterscaleHubBaseManager):
 
         # Case: data exchange direction is from NEST-to-TVB
         if self._intra_comm.Get_rank() == 0:
-            self.__output_comm, self.__output_port = self._set_up_connection(self.__output_path)
+            self.__output_comm, self.__output_port = self._set_up_connection()
             self.__input_comm = None
         else:
-            self.__input_comm, self.__input_port = self._set_up_connection(self.__input_path)
+            self.__input_comm, self.__input_port = self._set_up_connection()
             self.__output_comm = None
 
     def __get_path_to_TVB(self):

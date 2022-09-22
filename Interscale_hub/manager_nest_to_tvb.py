@@ -58,11 +58,11 @@ class NestToTvbManager(InterscaleHubBaseManager):
         # TODO no need to get paths where to save port info
 
         # path_to_spike_detectors (NEST)
-        self.__logger.debug("reading port info for spike detectors...")
-        self.__input_path = self.__get_path_to_spike_detectors()
-        # path to send_to_tvb (TVB)
-        self.__logger.debug("reading port info for sending to TVB...")
-        self.__output_path = self.__get_path_to_TVB()
+        # self.__logger.debug("reading port info for spike detectors...")
+        # self.__input_path = self.__get_path_to_spike_detectors()
+        # # path to send_to_tvb (TVB)
+        # self.__logger.debug("reading port info for sending to TVB...")
+        # self.__output_path = self.__get_path_to_TVB()
         ##############################################################
         
         # 2) create buffer in self.__databuffer
@@ -91,10 +91,10 @@ class NestToTvbManager(InterscaleHubBaseManager):
         # which then calls make_connection() method
 
         if self._intra_comm.Get_rank() == 0:
-            self.__input_comm, self.__input_port = self._set_up_connection(self.__input_path)
+            self.__input_comm, self.__input_port = self._set_up_connection()
             self.__output_comm = None
         else:
-            self.__output_comm, self.__output_port = self._set_up_connection(self.__output_path)
+            self.__output_comm, self.__output_port = self._set_up_connection()
             self.__input_comm = None
 
     def __get_path_to_TVB(self):

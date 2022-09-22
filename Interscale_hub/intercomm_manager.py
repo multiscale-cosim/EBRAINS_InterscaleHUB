@@ -12,11 +12,12 @@
 #
 # ------------------------------------------------------------------------------ 
 
+import os
 from mpi4py import MPI
 import pathlib
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
-
+from EBRAINS_RichEndpoint.Application_Companion.common_enums import INTEGRATED_INTERSCALEHUB_APPLICATION
 
 class IntercommManager:
     '''
@@ -40,7 +41,7 @@ class IntercommManager:
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         self.__logger.info("Initialised")
     
-    def open_port_accept_connection(self, paths):
+    def open_port_accept_connection(self, paths=None):
         '''
         Opens a port and writes the details to file.
         Accepts connection on the port.
@@ -57,35 +58,43 @@ class IntercommManager:
         '''
         comm = MPI.COMM_SELF
         root = 0
-        #if self.__comm.Get_rank() == self.__root:
+        # if self.__comm.Get_rank() == self.__root:
         # Write file configuration of the port
         port = MPI.Open_port(self.__info)
         ##############################################################
         # TODO get rid of for loop
         # TODO don't write to files
         # TODO print the port information in the defined format
-        for path in paths:
-            fport = open(path, "w+")
-            fport.write(port)
-            fport.close()
-            pathlib.Path(path + '.unlock').touch()
+        # for path in paths:
+        #     fport = open(path, "w+")
+        #     fport.write(port)
+        #     fport.close()
+        #     pathlib.Path(path + '.unlock').touch()
         ##############################################################
                 # self.__logger.info("Port opened and file created:" + path +
                 #             "on rank" + str(self.__comm.Get_rank()))
-        #else:
+        # else:
         #    port = None
         #port = self.__comm.bcast(port, self.__root) # avoid issues with mpi rank information.
         self.__logger.info('Rank ' + str(self.__comm.Get_rank()) + ' accepting connection on: ' + port)
+        # if self.__comm.Get_rank() == self.__root:
+        pid_and_port_info = \
+            {#'RANK': str(self.__comm.Get_rank()),
+            INTEGRATED_INTERSCALEHUB_APPLICATION.PID.name: os.getpid(),
+            INTEGRATED_INTERSCALEHUB_APPLICATION.MPI_CONNECTION_INFO.name: port}
+
+        # send port info to Application Manager as a response to init command
+        print(f'{pid_and_port_info}')
+
         inter_comm = comm.Accept(port, self.__info, root)
         self.__logger.info('Simulation client connected to' + str(inter_comm.Get_rank()))        
         return inter_comm, port
 
     def close_and_finalize(self, inter_comm, port):
-        
         inter_comm.Disconnect()
         MPI.Close_port(port) 
         self.__logger.info('Successfully disconnected and closed port')
-        
+
         # Finalize not needed in mpi4py
         # source:  https://mpi4py.readthedocs.io/en/stable/overview.html
         # MPI.Finalize()
