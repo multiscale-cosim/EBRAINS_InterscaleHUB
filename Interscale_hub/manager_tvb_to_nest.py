@@ -18,7 +18,8 @@ import time
 from EBRAINS_InterscaleHUB.Interscale_hub.communicator_tvb_to_nest import CommunicatorTvbNest                      
 from EBRAINS_InterscaleHUB.Interscale_hub.manager_base import InterscaleHubBaseManager                                   
 from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_EXCHANGE_DIRECTION                        
-from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response                                            
+from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
+from EBRAINS_RichEndpoint.Application_Companion.common_enums import INTERCOMM_TYPE 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories 
 
 
@@ -98,10 +99,15 @@ class TvbToNestManager(InterscaleHubBaseManager):
 
         # Case: data exchange direction is from NEST-to-TVB
         if self._intra_comm.Get_rank() == 0:
-            self.__output_comm, self.__output_port = self._set_up_connection()
+            self.__output_comm, self.__output_port = self._set_up_connection(
+                direction=DATA_EXCHANGE_DIRECTION.TVB_TO_NEST.name,
+                intercomm_type=INTERCOMM_TYPE.SENDER.name)
             self.__input_comm = None
+
         else:
-            self.__input_comm, self.__input_port = self._set_up_connection()
+            self.__input_comm, self.__input_port = self._set_up_connection(
+                direction=DATA_EXCHANGE_DIRECTION.TVB_TO_NEST.name,
+                intercomm_type=INTERCOMM_TYPE.RECEIVER.name)
             self.__output_comm = None
 
     def __get_path_to_TVB(self):
