@@ -42,7 +42,7 @@ class IntercommManager:
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         self.__logger.info("Initialised")
     
-    def open_port_accept_connection(self, direction=None, intercomm_type=None):
+    def open_port_accept_connection(self, direction, intercomm_type):
         '''
         Opens a port and writes the details to file.
         Accepts connection on the port.
@@ -59,34 +59,24 @@ class IntercommManager:
         '''
         comm = MPI.COMM_SELF
         root = 0
-        # if self.__comm.Get_rank() == self.__root:
-        # Write file configuration of the port
         port = MPI.Open_port(self.__info)
-
-        # for path in paths:
-        #     fport = open(path, "w+")
-        #     fport.write(port)
-        #     fport.close()
-        #     pathlib.Path(path + '.unlock').touch()
-
-        # self.__logger.info("Port opened and file created:" + path +
-        #             "on rank" + str(self.__comm.Get_rank()))
-
-        # else:
-        #    port = None
-        #port = self.__comm.bcast(port, self.__root) # avoid issues with mpi rank information.
-        self.__logger.info('Rank ' + str(self.__comm.Get_rank()) + ' accepting connection on: ' + port)
+        self.__logger.info(f'Rank {str(self.__comm.Get_rank())} accepting '
+                           f'connection on: {port}')
 
         # send port info to Application Manager as a response to init command
-        interscalehub_endpoint_address = self.__prepare_endpoint_address(
+        interscalehub_endpoint_address = self.__prepare_endpoint_address_response(
             direction, port, intercomm_type)
         print(f'{interscalehub_endpoint_address}')
 
         inter_comm = comm.Accept(port, self.__info, root)
-        self.__logger.info('Simulation client connected to' + str(inter_comm.Get_rank()))        
+        self.__logger.info(f'Simulation client is connected to '
+                           f'{inter_comm.Get_rank()}')
         return inter_comm, port
 
-    def __prepare_endpoint_address(self, direction, port, intercomm_type):
+    def __prepare_endpoint_address_response(self, direction, port, intercomm_type):
+        '''
+        helper function to format the port name to be send as a response
+        '''
         interscalehub_endpoint_address = \
             {
                 INTERSCALE_HUB.PID.name: os.getpid(),

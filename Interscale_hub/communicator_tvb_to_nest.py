@@ -176,22 +176,6 @@ class CommunicatorTvbNest(BaseCommunicator):
         check = np.empty(1,dtype='b')
         size_list = np.empty(1, dtype='i')
         id_first_spike_detector = self.__parameters['id_first_spike_detector']
-
-
-        ###########################################################
-        #TODO Refactor to move this functionality to appropriate location
-        
-        #NOTE As per protocol, it should be the response message of 'init'
-        # command, and should return the PID and the port information
-
-        # import os
-        # from EBRAINS_RichEndpoint.Application_Companion.common_enums import INTEGRATED_SIMULATOR_APPLICATION as SIMULATOR
-        # pid_and_local_minimum_step_size = \
-        # {SIMULATOR.PID.name: os.getpid(),
-        # SIMULATOR.LOCAL_MINIMUM_STEP_SIZE.name: 0.0}
-        # print(f'{pid_and_local_minimum_step_size}')
-        ###########################################################
-        
         while True:
             # TODO: This is still not correct. We only check for the Tag of the last rank.
             # IF all ranks send always the same tag in one iteration (simulation step)

@@ -53,17 +53,6 @@ class NestToTvbManager(InterscaleHubBaseManager):
         # done: TODO: set via XML settings? POD
         # to be removed: self.__buffersize = self._max_events * 3  # 3 doubles per event
         self.__buffersize = self._sci_params.max_events * self._sci_params.nest_buffer_size_factor
-
-        ##############################################################
-        # TODO no need to get paths where to save port info
-
-        # path_to_spike_detectors (NEST)
-        # self.__logger.debug("reading port info for spike detectors...")
-        # self.__input_path = self.__get_path_to_spike_detectors()
-        # # path to send_to_tvb (TVB)
-        # self.__logger.debug("reading port info for sending to TVB...")
-        # self.__output_path = self.__get_path_to_TVB()
-        ##############################################################
         
         # 2) create buffer in self.__databuffer
         self.__logger.debug("Creating MPI shared memory Buffer...")
@@ -101,45 +90,6 @@ class NestToTvbManager(InterscaleHubBaseManager):
                 direction=DATA_EXCHANGE_DIRECTION.NEST_TO_TVB.name,
                 intercomm_type=INTERCOMM_TYPE.SENDER.name)
             self.__input_comm = None
-
-    def __get_path_to_TVB(self):
-        """
-        helper function to get the path to file containing the connection
-        details of TVB for sending the data to it.
-        """
-        # NOTE transformer id is hardcoded as 0 in base class
-        return [
-            self._path + "/transformation/send_to_tvb/" +
-            str(self._id_proxy_nest_region[self._transformer_id]) + ".txt"]
-
-    def __get_path_to_spike_detectors(self):
-        """
-        helper function to get the path to file containing the connection
-        details of spike detectors (NEST) for receiving the data.
-        """
-        # wait until NEST writes the spike detectors ids
-        while not os.path.exists(self._path + '/nest/spike_detector.txt.unlock'):
-            self.__logger.info("spike detector ids not found yet, retry in 1 second")
-            time.sleep(1)
-
-        # load data from the file
-        spike_detector = np.loadtxt(self._path + '/nest/spike_detector.txt', dtype=int)
-        # case of one spike detector
-        try:
-            spike_detector = np.array([int(spike_detector)])
-        except:
-            #
-            # PEP 8: E722 do not use bare 'except'
-            # Too broad exception clause
-            #
-            pass  # TODO log the exception and discuss if terminate with error
-
-        # get the id of spike detector
-        self.__logger.debug(f"spike_detector: {spike_detector}")
-        id_spike_detector = spike_detector[self._transformer_id]  # NOTE transformer id is hardcoded as 0
-        # return path to spike detector
-        # TODO change the return type from list to str or path object?
-        return [self._path + "/transformation/spike_detector/" + str(id_spike_detector) + ".txt"]
 
     def start(self):
         """
