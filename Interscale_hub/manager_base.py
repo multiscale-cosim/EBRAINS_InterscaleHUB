@@ -11,6 +11,7 @@
 #       Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
 from abc import ABC, abstractmethod
+import os
 from mpi4py import MPI
 
 from EBRAINS_InterscaleHUB.Interscale_hub.communicator_nest_to_tvb import CommunicatorNestTvb
@@ -129,7 +130,7 @@ class InterscaleHubBaseManager(ABC):
                 self._intra_comm)
         return self._interscalehub_buffer
 
-    def _set_up_connection(self, path_to_port_file):
+    def _set_up_connection(self, direction, intercomm_type):
         """
         Open ports and register connection details.
         Accept connection on ports and create INTER communicators.
@@ -140,7 +141,7 @@ class InterscaleHubBaseManager(ABC):
             - output = outgoing simulation data
         """
         return self._intercomm_manager.open_port_accept_connection(
-            path_to_port_file)
+            direction, intercomm_type)
 
     @abstractmethod
     def start(self):

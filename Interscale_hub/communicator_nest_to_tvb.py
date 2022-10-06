@@ -102,15 +102,15 @@ class CommunicatorNestTvb(BaseCommunicator):
         # --> they replace the status_data variable from previous version
         # --> find more elegant solution?
         self._logger.info("setting up buffers")
-        
+
         # set buffer to 'ready to receive from nest'
         # self.__databuffer[-1] = 1
         self._data_buffer_manager.set_ready_at(index=-1)
-        
+
         # marks the 'head' of the buffer
         # self.__databuffer[-2] = 0
         self._data_buffer_manager.set_header_at(index=-2)
-        
+
         # It seems the 'check' variable is used to receive tags from NEST,
         # i.e. ready for send...
         # change this in the future, also mentioned in the FatEndPoint solution
@@ -120,34 +120,19 @@ class CommunicatorNestTvb(BaseCommunicator):
         count = 0
         status_ = MPI.Status()
         self._logger.info("reading from buffer")
-        
-        ###########################################################
-        # TODO Refactor to move this functionality to appropriate location
-        
-        # NOTE As per protocol, it should be the response message of 'init'
-        # command, and should return the PID and the port information
-
-        import os
-        from EBRAINS_RichEndpoint.Application_Companion.common_enums import INTEGRATED_SIMULATOR_APPLICATION as SIMULATOR
-        pid_and_local_minimum_step_size = \
-        {SIMULATOR.PID.name: os.getpid(),
-        SIMULATOR.LOCAL_MINIMUM_STEP_SIZE.name: 0.0}
-        print(f'{pid_and_local_minimum_step_size}')
-        ###########################################################
-        # self._logger.info("NESTtoTVB -- consumer/receiver -- Rank:"+str(self._comm_receiver.Get_rank()))
         while True:
             running_head = 0  # head of the buffer, reset after each iteration
             # TODO: This is still not correct. We only check for the Tag of the last rank.
             # IF all ranks send always the same tag in one iteration (simulation step)
             # then this works. But it should be handled differently!!!!
             self._comm_receiver.Recv([check, 1, MPI.CXX_BOOL], source=0, tag=MPI.ANY_TAG, status=status_)
-            
+
             status_rank_0 = status_.Get_tag()
             for i in range(1, self._num_sending):
                 # new: We do not care which source sends first, give MPI the freedom to send in whichever order.
                 # self._comm_receiver.Recv([check, 1, MPI.CXX_BOOL], source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status_)
                 self._comm_receiver.Recv([check, 1, MPI.CXX_BOOL], source=i, tag=MPI.ANY_TAG, status=status_)
-                # Check if     the state of the NEST is different between the ranks
+                # Check if the state of the NEST is different between the ranks
                 if status_rank_0 != status_.Get_tag():
                     # Log the exception with traceback
                     interscalehub_utils.log_exception(

@@ -18,7 +18,8 @@ import time
 from EBRAINS_InterscaleHUB.Interscale_hub.communicator_tvb_to_nest import CommunicatorTvbNest                      
 from EBRAINS_InterscaleHUB.Interscale_hub.manager_base import InterscaleHubBaseManager                                   
 from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_EXCHANGE_DIRECTION                        
-from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response                                            
+from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
+from EBRAINS_RichEndpoint.Application_Companion.common_enums import INTERCOMM_TYPE 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories 
 
 
@@ -28,7 +29,7 @@ class TvbToNestManager(InterscaleHubBaseManager):
     1) Interact with InterscaleHub Facade to steer the execution
     2) Manage the InterscaleHub functionality.
     """
-    def __init__(self, parameters, direction, configurations_manager, log_settings,
+    def __init__(self, parameters, configurations_manager, log_settings,
                  sci_params_xml_path_filename=''):
         """
             Init params, create buffer, open ports, accept connections
@@ -58,17 +59,6 @@ class TvbToNestManager(InterscaleHubBaseManager):
         # done: TODO: set via XML settings? POD
         # self.__buffersize = 2 + self._max_events  # 2 doubles: [start_time,end_time] of simulation step
         self.__buffersize = self._sci_params.max_events + self._sci_params.tvb_buffer_size_factor
-
-        ##############################################################
-        # TODO no need to get paths where to save port info
-
-        # path to receive_from_tvb (TVB)
-        self.__logger.debug("reading port info for receiving from TVB...")
-        self.__input_path = self.__get_path_to_TVB()
-        # path to spike_generators (NEST)
-        self.__logger.debug("reading port info for spike generators...")
-        self.__output_path = self.__get_path_to_spike_generators()
-        ##############################################################
         self.__logger.debug("Init Params done.")
         
         # 2) create buffer in self.__databuffer
@@ -98,61 +88,16 @@ class TvbToNestManager(InterscaleHubBaseManager):
 
         # Case: data exchange direction is from NEST-to-TVB
         if self._intra_comm.Get_rank() == 0:
-            self.__output_comm, self.__output_port = self._set_up_connection(self.__output_path)
+            self.__output_comm, self.__output_port = self._set_up_connection(
+                direction=DATA_EXCHANGE_DIRECTION.TVB_TO_NEST.name,
+                intercomm_type=INTERCOMM_TYPE.SENDER.name)
             self.__input_comm = None
+
         else:
-            self.__input_comm, self.__input_port = self._set_up_connection(self.__input_path)
+            self.__input_comm, self.__input_port = self._set_up_connection(
+                direction=DATA_EXCHANGE_DIRECTION.TVB_TO_NEST.name,
+                intercomm_type=INTERCOMM_TYPE.RECEIVER.name)
             self.__output_comm = None
-
-    def __get_path_to_TVB(self):
-        """
-        helper function to get the path to file containing the connection
-        details of TVB for receiving the data from it.
-        """
-        # NOTE transformer id is hardcoded as 0 in base class
-        return [
-            self._path + "/transformation/receive_from_tvb/" + 
-            str(self._id_proxy_nest_region[self._transformer_id]) + ".txt"]
-
-    def __get_path_to_spike_generators(self):
-        """
-        helper function to get the path to file containing the connection
-        details of spike detectors (NEST) for sending the data.
-        """
-        # wait until NEST writes the spike generators ids
-        while not os.path.exists(self._path + '/nest/spike_generator.txt.unlock'):
-            self.__logger.info("spike generator ids not found yet, retry in 1 second")
-            time.sleep(1)
-        
-        # load data from the file
-        spike_generator = np.loadtxt(self._path + '/nest/spike_generator.txt', dtype=int)
-        # case of one spike generator
-        try:
-            if len(spike_generator.shape) < 2:
-                spike_generator = np.expand_dims(spike_generator, 0)
-            self.__logger.debug(f"spike generator shape: {spike_generator.shape}")
-        except Exception:
-            self.__logger.exception('bad shape of spike generator')
-            pass  # TODO discuss if terminate with error
-
-        self.__logger.debug(f"spike_generators: {spike_generator}")
-
-        # get the id of first spike generator
-        id_first_spike_generator = spike_generator[self._transformer_id][0]
-        # get total number of spike generators
-        nb_spike_generators = len(spike_generator[self._transformer_id])
-        # prepare the list of path to spike generators
-        path_to_spike_generators = []
-        # read from the files to get the path to spike generators
-        for i in range(nb_spike_generators):
-            # populate the list with path to spike generators
-            path_to_spike_generators.append(
-                os.path.join(self._path + "/transformation/spike_generator/",
-                             str(id_first_spike_generator + i) + ".txt")
-            )
-
-        # return the path to spike generators i.e. receive from TVB
-        return path_to_spike_generators
 
     def start(self):
         """
