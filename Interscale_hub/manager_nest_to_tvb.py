@@ -42,6 +42,7 @@ class NestToTvbManager(InterscaleHubBaseManager):
             log_configurations=self.__log_settings,
             target_directory=DefaultDirectories.SIMULATION_RESULTS)
 
+        self.__logger.info(f"__DEBUG__ **** host_name:{os.uname()}")
         # 1) param stuff, create IntercommManager
         self.__logger.debug("Init Params...")
         super().__init__(parameters,
