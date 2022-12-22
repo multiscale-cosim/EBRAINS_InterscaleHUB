@@ -26,7 +26,8 @@ class NestToTvbManager(InterscaleHubBaseManager):
     """
         From NEST to TVB workflow manager
     """
-
+    # NOTE two different sources of parameters
+    # TODO Refactoring
     def __init__(self, parameters, configurations_manager, log_settings,
                  sci_params_xml_path_filename=''):
         """
@@ -34,7 +35,6 @@ class NestToTvbManager(InterscaleHubBaseManager):
         1) Interact with InterscaleHub Facade to steer the execution
         2) Manage the InterscaleHub functionality.
         """
-
         self.__log_settings = log_settings
         self.__configurations_manager = configurations_manager
         self.__logger = self.__configurations_manager.load_log_configurations(
@@ -42,7 +42,7 @@ class NestToTvbManager(InterscaleHubBaseManager):
             log_configurations=self.__log_settings,
             target_directory=DefaultDirectories.SIMULATION_RESULTS)
 
-        self.__logger.info(f"__DEBUG__ **** host_name:{os.uname()}")
+        self.__logger.debug(f"host_name:{os.uname()}")
         # 1) param stuff, create IntercommManager
         self.__logger.debug("Init Params...")
         super().__init__(parameters,
