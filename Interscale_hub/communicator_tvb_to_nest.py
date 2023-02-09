@@ -20,7 +20,7 @@ from EBRAINS_InterscaleHUB.Interscale_hub.communicator_base import BaseCommunica
 from EBRAINS_InterscaleHUB.Interscale_hub import interscalehub_utils
 from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_BUFFER_STATES
 
-from EBRAINS_RichEndpoint.Application_Companion.common_enums import Response
+from EBRAINS_RichEndpoint.application_companion.common_enums import Response
 
 # NestTvbPivot and TvbNestPivot classes:
 # TODO: proper abstraction -> extract the usecase details from the general implementation

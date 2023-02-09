@@ -17,7 +17,7 @@ import time
 from EBRAINS_InterscaleHUB.Interscale_hub.communicator_nest_to_tvb import CommunicatorNestTvb
 from EBRAINS_InterscaleHUB.Interscale_hub.manager_base import InterscaleHubBaseManager
 from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_EXCHANGE_DIRECTION
-from EBRAINS_RichEndpoint.Application_Companion.common_enums import INTERCOMM_TYPE, Response
+from EBRAINS_RichEndpoint.application_companion.common_enums import INTERCOMM_TYPE, Response
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
