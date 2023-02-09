@@ -29,6 +29,8 @@ class TvbToNestManager(InterscaleHubBaseManager):
     1) Interact with InterscaleHub Facade to steer the execution
     2) Manage the InterscaleHub functionality.
     """
+    # NOTE two different sources of parameters
+    # TODO Refactoring
     def __init__(self, parameters, configurations_manager, log_settings,
                  sci_params_xml_path_filename=''):
         """
@@ -48,7 +50,7 @@ class TvbToNestManager(InterscaleHubBaseManager):
                                         log_configurations=self.__log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         
-        self.__logger.info(f"__DEBUG__ host_name:{os.uname()}")
+        self.__logger.debug(f"host_name:{os.uname()}")
         # 1) param stuff, create IntercommManager
         self.__logger.debug("Init Params...")
         super().__init__(parameters,
