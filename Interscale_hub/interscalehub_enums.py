@@ -17,8 +17,10 @@ import enum
 @enum.unique
 class DATA_EXCHANGE_DIRECTION(enum.IntEnum):
     """ Enum class for communication direction"""
+    # TODO refactor all usecases to replace with more general enums
     NEST_TO_TVB = 1
     TVB_TO_NEST = 2
+    NEST_TO_LFPY = 3
 
 
 @enum.unique
