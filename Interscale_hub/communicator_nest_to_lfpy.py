@@ -103,7 +103,12 @@ class CommunicatorNestLFPY(BaseCommunicator):
         # from Wouter.
         check = np.empty(1,dtype='b')
         shape = np.empty(1, dtype='i')    
-        count = 0
+
+        # NOTE count is used to calculate t_start, t_stop inside
+        # spike to rate conversion function. It is important to start it
+        # from -1 for one way simulaiton because InterscaelHub recevies the
+        # data after NEST simulate one step.
+        count = -1
         status_ = MPI.Status()
         self._logger.info("reading from buffer")
         while True:
@@ -127,7 +132,6 @@ class CommunicatorNestLFPY(BaseCommunicator):
                         mpi_tag_received=status_.Get_tag())
                     # Terminate with Error
                     return Response.ERROR
-
             if status_.Get_tag() == 0:
                 # wait until ready to receive new data (i.e. the sender has cleared the buffer)
                 
@@ -136,7 +140,6 @@ class CommunicatorNestLFPY(BaseCommunicator):
                 while self._data_buffer_manager.get_at(index=-1) != DATA_BUFFER_STATES.READY:
                     time.sleep(0.001)
                     pass
-
                 for source in range(self._num_sending):
                     # send 'ready' to the nest rank
                     # self._logger.info("send ready")
@@ -153,31 +156,37 @@ class CommunicatorNestLFPY(BaseCommunicator):
                                               source=source,
                                               tag=0,
                                               status=status_)
-                    
                     ########################################################
                     # TODO add call to LFPy kernel here
                     # NOTE will be changed later to handle by rank =< 1
                     ########################################################
-                    self._logger.debug(f"Transforming data received")
-                    times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
-                    self._logger.debug(f"data after transformation: times: {times}, data: {data}")
+                    self._logger.debug(f"data received")
+                    self._logger.info(f"__DEBUG__ count: {count}, buffer now:{data_buffer[running_head:-2]}")
+                    # times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
+                    # self._logger.debug(f"data after transformation: times: {times}, data: {data}")
+                    
+                    # NOTE here put the call to compute mediator.compute_lfpy()
+                    
+                    self._logger.info(f"__DEBUG__ data transformed!")
                     ########################################################
                     
                     running_head += shape[0]  # move running head
-                # Mark as 'ready to do analysis'
-                # self.__databuffer[-1] = 0
-                self._data_buffer_manager.set_header_at(index=-1)
-
+                # Mark as 'ready to receive next simulation step'
+                # self.__databuffer[-1] = 1
+                self._data_buffer_manager.set_ready_at(index=-1)
                 # important: head_ is first buffer index WITHOUT data.
                 # self.__databuffer[-2] = head_
                 self._data_buffer_manager.set_custom_value_at(
                                                         index=-2,
                                                         value=running_head)
                 # continue receiving the data
+                count += 1
                 continue
             elif status_.Get_tag() == 1:
+                self._logger.info(f"__DEBUG__ inside if Get_tag()=1, count:{count}")
                 # increment the count and continue receiving the data
-                count += 1
+                # count += 1
+                # self._data_buffer_manager.set_ready_at(index=-1)
                 continue
             elif status_.Get_tag() == 2:
                 # NOTE: simulation ended
