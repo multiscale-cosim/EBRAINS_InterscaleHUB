@@ -62,7 +62,7 @@ class InterscaleHubBaseManager(ABC):
             self._log_settings)
 
         self._path = self._parameters['path']
-
+        self._direction = direction  # TODO refactor to replace hardcoded direction
         # instances for mediation
         # Data Buffer Manager
         self._interscalehub_buffer_manager = InterscaleHubBufferManager(
@@ -91,20 +91,19 @@ class InterscaleHubBaseManager(ABC):
 
         # Simulators Managers
         # Case a: NEST to TVB Manager
-        if direction == DATA_EXCHANGE_DIRECTION.NEST_TO_TVB:
-            self._nest_tvb_communicator = CommunicatorNestTvb(
-                self._configurations_manager,
-                self._log_settings,
-                self._interscalehub_buffer_manager,
-                self._mediator)
-        # Case b: TVB to NEST Manager
-        elif direction == DATA_EXCHANGE_DIRECTION.TVB_TO_NEST:
-            self._tvb_nest_communicator = CommunicatorTvbNest(
-                self._configurations_manager,
-                self._log_settings,
-                parameters,
-                self._interscalehub_buffer_manager,
-                self._mediator)
+        # if direction == DATA_EXCHANGE_DIRECTION.NEST_TO_TVB:
+        #     self._nest_tvb_communicator = CommunicatorNestTvb(
+        #         self._configurations_manager,
+        #         self._log_settings,
+        #         self._interscalehub_buffer_manager,
+        #         self._mediator)
+        # # Case b: TVB to NEST Manager
+        # elif direction == DATA_EXCHANGE_DIRECTION.TVB_TO_NEST:
+        #     self._tvb_nest_communicator = CommunicatorTvbNest(
+        #         self._configurations_manager,
+        #         self._log_settings,
+        #         self._interscalehub_buffer_manager,
+        #         self._mediator)
 
         # TODO: set via XML settings.
         # NOTE consider the scenario when handling the data larger than the buffer size

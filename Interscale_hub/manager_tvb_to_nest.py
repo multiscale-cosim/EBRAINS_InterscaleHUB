@@ -32,6 +32,7 @@ class TvbToNestManager(InterscaleHubBaseManager):
     # NOTE two different sources of parameters
     # TODO Refactoring
     def __init__(self, parameters, configurations_manager, log_settings,
+                 direction,
                  sci_params_xml_path_filename=''):
         """
             Init params, create buffer, open ports, accept connections
@@ -54,7 +55,8 @@ class TvbToNestManager(InterscaleHubBaseManager):
         # 1) param stuff, create IntercommManager
         self.__logger.debug("Init Params...")
         super().__init__(parameters,
-                         DATA_EXCHANGE_DIRECTION.TVB_TO_NEST,
+                         #  DATA_EXCHANGE_DIRECTION.TVB_TO_NEST,
+                         direction,
                          self.__configurations_manager,
                          self.__log_settings,
                          sci_params_xml_path_filename=sci_params_xml_path_filename)
@@ -102,7 +104,7 @@ class TvbToNestManager(InterscaleHubBaseManager):
                 intercomm_type=INTERCOMM_TYPE.RECEIVER.name)
             self.__output_comm = None
 
-    def start(self):
+    def start(self, id_first_spike_detector):
         """
         implementation of abstract method to start transformation and
         exchanging the data with TVB and NEST.
@@ -113,14 +115,14 @@ class TvbToNestManager(InterscaleHubBaseManager):
         self.__tvb_nest_communicator = CommunicatorTvbNest(
             self.__configurations_manager,
             self.__log_settings,
-            self._parameters,
             self._interscalehub_buffer_manager,
             self._mediator)
         
         # start exchanging the data
         if self.__tvb_nest_communicator.start(self._intra_comm,
                                               self.__input_comm,
-                                              self.__output_comm) == Response.ERROR:
+                                              self.__output_comm,
+                                              id_first_spike_detector) == Response.ERROR:
             # Case a: something went wrong during the data exchange
             # NOTE the details are already been logged at the origin of the error
             # now terminate with error

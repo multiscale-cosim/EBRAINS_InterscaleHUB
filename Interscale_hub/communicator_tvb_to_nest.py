@@ -42,7 +42,7 @@ class CommunicatorTvbNest(BaseCommunicator):
     after processing/transforming to the required format.
     '''
     def __init__(self, configurations_manager, log_settings,
-                 parameters, data_buffer_manager, mediator):
+                 data_buffer_manager, mediator):
         '''
         Implements the BaseCommunicator. It 
         1) Receives the data from TVB
@@ -56,11 +56,9 @@ class CommunicatorTvbNest(BaseCommunicator):
                          data_buffer_manager,
                          mediator)
         
-        # Parameter for transformation and analysis
-        self.__parameters = parameters
         self._logger.info("Initialized")
 
-    def start(self, intra_communicator, inter_comm_receiver, inter_comm_sender):
+    def start(self, intra_communicator, inter_comm_receiver, inter_comm_sender, id_first_spike_detector):
         '''
         Start the pivot operation.
         M:N mapping of MPI ranks, receive data, further process data.
@@ -75,7 +73,7 @@ class CommunicatorTvbNest(BaseCommunicator):
             # set inter_communicator for sending the data
             self._comm_sender = inter_comm_sender
             self._num_receiving = self._comm_sender.Get_remote_size()
-            return self._send()
+            return self._send(id_first_spike_detector)
         # Rank-1 will transform and send the data
         elif intra_communicator.Get_rank() == 1:
             # set inter_communicator for receiving the data
@@ -165,7 +163,7 @@ class CommunicatorTvbNest(BaseCommunicator):
         
         # logger.info('TVB_to_NEST: End of receive function')
 
-    def _send(self):
+    def _send(self, id_first_spike_detector):
         '''
         Send data to NEST (multiple MPI ranks possible).
         Replaces the former 'send' function.
@@ -175,7 +173,7 @@ class CommunicatorTvbNest(BaseCommunicator):
         # NOTE: hardcoded...
         check = np.empty(1,dtype='b')
         size_list = np.empty(1, dtype='i')
-        id_first_spike_detector = self.__parameters['id_first_spike_detector']
+        # id_first_spike_detector = self.__parameters['id_first_spike_detector']
         while True:
             # TODO: This is still not correct. We only check for the Tag of the last rank.
             # IF all ranks send always the same tag in one iteration (simulation step)

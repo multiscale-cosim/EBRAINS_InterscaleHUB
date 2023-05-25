@@ -29,6 +29,7 @@ class NestToTvbManager(InterscaleHubBaseManager):
     # NOTE two different sources of parameters
     # TODO Refactoring
     def __init__(self, parameters, configurations_manager, log_settings,
+                 direction,
                  sci_params_xml_path_filename=''):
         """
         Implements the InterscaleHubBaseManager to
@@ -46,7 +47,8 @@ class NestToTvbManager(InterscaleHubBaseManager):
         # 1) param stuff, create IntercommManager
         self.__logger.debug("Init Params...")
         super().__init__(parameters,
-                         DATA_EXCHANGE_DIRECTION.NEST_TO_TVB,
+                         #  DATA_EXCHANGE_DIRECTION.NEST_TO_TVB,
+                         direction,
                          self.__configurations_manager,
                          self.__log_settings,
                          sci_params_xml_path_filename=sci_params_xml_path_filename)
