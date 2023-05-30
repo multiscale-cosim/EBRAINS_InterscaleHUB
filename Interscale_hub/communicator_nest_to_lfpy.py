@@ -161,13 +161,13 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     # NOTE will be changed later to handle by rank =< 1
                     ########################################################
                     self._logger.debug(f"data received")
-                    self._logger.info(f"__DEBUG__ count: {count}, buffer now:{data_buffer[running_head:-2]}")
+                    self._logger.info(f"count: {count}, buffer now:{data_buffer[running_head:-2]}")
                     # times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
                     # self._logger.debug(f"data after transformation: times: {times}, data: {data}")
                     
                     # NOTE here put the call to compute mediator.compute_lfpy()
                     
-                    self._logger.info(f"__DEBUG__ data transformed!")
+                    self._logger.debug(f"data transformed!")
                     ########################################################
                     
                     running_head += shape[0]  # move running head
@@ -183,7 +183,6 @@ class CommunicatorNestLFPY(BaseCommunicator):
                 count += 1
                 continue
             elif status_.Get_tag() == 1:
-                self._logger.info(f"__DEBUG__ inside if Get_tag()=1, count:{count}")
                 # increment the count and continue receiving the data
                 # count += 1
                 # self._data_buffer_manager.set_ready_at(index=-1)
@@ -218,12 +217,12 @@ class CommunicatorNestLFPY(BaseCommunicator):
             # times,data = mediator.spike_to_rate(self.__databuffer, count)
             # TODO: change to inject the buffer in the wrapper method of mediator
             # times, data = spikerate.spike_to_rate(count, self.__databuffer[-2], self.__databuffer)
-            self.__logger.info("__DEBUG__ Transforming data")
+            self.__logger.debug("Transforming data")
             times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
             # TODO add call to LFPy kernel here
-            self.__logger.info(f"__DEBUG__ setting buffer ready")
+            self.__logger.debug(f"setting buffer ready")
             self._data_buffer_manager.set_ready_at(index=-1)
-            self.__logger.info(f"__DEBUG__ setting buffer ready")
+            self.__logger.debug(f"setting buffer ready")
             # size = np.array(int(data.shape[0]),dtype='i')
             count += 1
             continue
