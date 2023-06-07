@@ -163,8 +163,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     self._logger.debug(f"data received")
                     self._logger.info(f"count: {count}, buffer now:{data_buffer[running_head:-2]}")
 
-
-
+                    print(f"running_head: {running_head}, shape: {shape}")
                     # times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
                     # self._logger.debug(f"data after transformation: times: {times}, data: {data}")
                     data_ = data_buffer.reshape(int(len(data_buffer)/3), 3)
