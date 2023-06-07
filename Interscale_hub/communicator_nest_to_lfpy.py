@@ -162,15 +162,24 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     ########################################################
                     self._logger.debug(f"data received")
                     self._logger.info(f"count: {count}, buffer now:{data_buffer[running_head:-2]}")
+
+
+
                     # times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
                     # self._logger.debug(f"data after transformation: times: {times}, data: {data}")
-                    
+                    data_ = data_buffer.reshape(int(len(data_buffer)/3), 3)
+                    idxs = data_[:, 0] != 0.0
+                    if count < 50:
+                        np.save(f'data_{count}.npy', data_[:, :])
+                    #print(data_buffer[3:])
+                    # print("running head:", running_head)
+
                     # NOTE here put the call to compute mediator.compute_lfpy()
                     
                     self._logger.debug(f"data transformed!")
                     ########################################################
                     
-                    running_head += shape[0]  # move running head
+                    running_head = shape[0]  # move running head
                 # Mark as 'ready to receive next simulation step'
                 # self.__databuffer[-1] = 1
                 self._data_buffer_manager.set_ready_at(index=-1)
@@ -181,6 +190,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
                                                         value=running_head)
                 # continue receiving the data
                 count += 1
+                running_head = 0
                 continue
             elif status_.Get_tag() == 1:
                 # increment the count and continue receiving the data
