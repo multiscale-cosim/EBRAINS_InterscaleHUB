@@ -102,7 +102,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
         # change this in the future, also mentioned in the FatEndPoint solution
         # from Wouter.
         check = np.empty(1,dtype='b')
-        shape = np.empty(1, dtype='i')    
+        shape = np.empty(1, dtype='i')
 
         # NOTE count is used to calculate t_start, t_stop inside
         # spike to rate conversion function. It is important to start it
@@ -111,8 +111,8 @@ class CommunicatorNestLFPY(BaseCommunicator):
         count = -1
         status_ = MPI.Status()
         self._logger.info("reading from buffer")
+        running_head = 0  # head of the buffer, reset after each iteration
         while True:
-            running_head = 0  # head of the buffer, reset after each iteration
             # TODO: This is still not correct. We only check for the Tag of the last rank.
             # IF all ranks send always the same tag in one iteration (simulation step)
             # then this works. But it should be handled differently!!!!
@@ -134,7 +134,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     return Response.ERROR
             if status_.Get_tag() == 0:
                 # wait until ready to receive new data (i.e. the sender has cleared the buffer)
-                
+
                 # TODO: use MPI, remove the sleep
                 # # while self.__databuffer[-1] != 1:
                 while self._data_buffer_manager.get_at(index=-1) != DATA_BUFFER_STATES.READY:
@@ -146,27 +146,32 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     self._comm_receiver.Send([np.array(True,dtype='b'),MPI.BOOL],dest=source,tag=0)
                     # receive package size info
                     self._comm_receiver.Recv([shape, 1, MPI.INT], source=source, tag=0, status=status_)
+                    # running_head = shape[0]  # move running head
+
                     # self._comm_receiver.Recv([shape, 1, MPI.INT], source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status_)
                     # NEW: receive directly into the buffer
                     # self._comm_receiver.Recv([self.__databuffer[head_:], MPI.DOUBLE], source=source, tag=0, status=status_)
-                    data_buffer = self._data_buffer_manager.get_from(
-                                    starting_index=running_head)
-                            
+                    data_buffer = self._data_buffer_manager.get_from_range(
+                        start=running_head, end=running_head + shape[0])
                     self._comm_receiver.Recv([data_buffer, MPI.DOUBLE],
-                                              source=source,
-                                              tag=0,
-                                              status=status_)
+                                             source=source,
+                                             tag=0,
+                                             status=status_)
+
+
+
                     ########################################################
                     # TODO add call to LFPy kernel here
                     # NOTE will be changed later to handle by rank =< 1
                     ########################################################
                     self._logger.debug(f"data received")
-                    self._logger.info(f"count: {count}, buffer now:{data_buffer[running_head:-2]}")
+                    self._logger.info(f"count: {count}, buffer now:{data_buffer}")
 
                     print(f"running_head: {running_head}, shape: {shape}")
                     # times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
                     # self._logger.debug(f"data after transformation: times: {times}, data: {data}")
-                    data_ = data_buffer.reshape(int(len(data_buffer)/3), 3)
+                    data_ = data_buffer
+                    data_ = data_.reshape(int(len(data_)/3), 3)
                     idxs = data_[:, 0] != 0.0
                     if count < 50:
                         np.save(f'data_{count}.npy', data_[:, :])
@@ -174,22 +179,22 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     # print("running head:", running_head)
 
                     # NOTE here put the call to compute mediator.compute_lfpy()
-                    
+
                     self._logger.debug(f"data transformed!")
                     ########################################################
-                    
-                    running_head = shape[0]  # move running head
+
+
                 # Mark as 'ready to receive next simulation step'
                 # self.__databuffer[-1] = 1
                 self._data_buffer_manager.set_ready_at(index=-1)
                 # important: head_ is first buffer index WITHOUT data.
                 # self.__databuffer[-2] = head_
                 self._data_buffer_manager.set_custom_value_at(
-                                                        index=-2,
-                                                        value=running_head)
+                    index=-2,
+                    value=running_head)
                 # continue receiving the data
                 count += 1
-                running_head = 0
+                running_head += shape[0]
                 continue
             elif status_.Get_tag() == 1:
                 # increment the count and continue receiving the data
