@@ -22,6 +22,8 @@ from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_BUFFER
 
 from EBRAINS_RichEndpoint.application_companion.common_enums import Response
 
+from science.models.lfpykernels_PotjansDiesmann import PotjansDiesmannKernels
+
 
 class CommunicatorNestLFPY(BaseCommunicator):
     '''
@@ -42,7 +44,10 @@ class CommunicatorNestLFPY(BaseCommunicator):
                          mediator)
         
         self._logger.info("Initialized")
-      
+
+        self._logger.info("Initiating kernels")
+        self.PD_kernels = PotjansDiesmannKernels()
+
     def start(self, intra_communicator, inter_comm_receiver, inter_comm_sender):
         '''
         implements the abstract method to start
@@ -78,6 +83,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
             self._logger.exception("stop() is not implemented yet")
             return Response.OK
 
+
     def _receive(self):
         '''
         Receives data on rank 0. Put it into the shared mem buffer.
@@ -101,7 +107,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
         # i.e. ready for send...
         # change this in the future, also mentioned in the FatEndPoint solution
         # from Wouter.
-        check = np.empty(1,dtype='b')
+        check = np.empty(1, dtype='b')
         shape = np.empty(1, dtype='i')
 
         # NOTE count is used to calculate t_start, t_stop inside
@@ -143,10 +149,9 @@ class CommunicatorNestLFPY(BaseCommunicator):
                 for source in range(self._num_sending):
                     # send 'ready' to the nest rank
                     # self._logger.info("send ready")
-                    self._comm_receiver.Send([np.array(True,dtype='b'),MPI.BOOL],dest=source,tag=0)
+                    self._comm_receiver.Send([np.array(True, dtype='b'),MPI.BOOL], dest=source, tag=0)
                     # receive package size info
                     self._comm_receiver.Recv([shape, 1, MPI.INT], source=source, tag=0, status=status_)
-                    # running_head = shape[0]  # move running head
 
                     # self._comm_receiver.Recv([shape, 1, MPI.INT], source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status_)
                     # NEW: receive directly into the buffer
@@ -158,8 +163,6 @@ class CommunicatorNestLFPY(BaseCommunicator):
                                              tag=0,
                                              status=status_)
 
-
-
                     ########################################################
                     # TODO add call to LFPy kernel here
                     # NOTE will be changed later to handle by rank =< 1
@@ -167,17 +170,14 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     self._logger.debug(f"data received")
                     self._logger.info(f"count: {count}, buffer now:{data_buffer}")
 
-                    print(f"running_head: {running_head}, shape: {shape}")
                     # times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
                     # self._logger.debug(f"data after transformation: times: {times}, data: {data}")
                     data_ = data_buffer
                     data_ = data_.reshape(int(len(data_)/3), 3)
-                    idxs = data_[:, 0] != 0.0
-                    if count < 50:
-                        np.save(f'data_{count}.npy', data_[:, :])
-                    #print(data_buffer[3:])
-                    # print("running head:", running_head)
-
+                    pop_firing_rate_dict = {}
+                    pop_firing_rate_dict = self.PD_kernels.get_firingrate_from_buffer(data_,
+                                                                                      pop_firing_rate_dict)
+                    self._logger.info(pop_firing_rate_dict)
                     # NOTE here put the call to compute mediator.compute_lfpy()
 
                     self._logger.debug(f"data transformed!")
