@@ -46,7 +46,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
         self._logger.info("Initialized")
 
         self._logger.info("Initiating kernels")
-        self.PD_kernels = PotjansDiesmannKernels()
+        # self.PD_kernels = PotjansDiesmannKernels()
 
     def start(self, intra_communicator, inter_comm_receiver, inter_comm_sender):
         '''
@@ -174,10 +174,10 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     # self._logger.debug(f"data after transformation: times: {times}, data: {data}")
                     data_ = data_buffer
                     data_ = data_.reshape(int(len(data_)/3), 3)
-                    pop_firing_rate_dict = {}
-                    pop_firing_rate_dict = self.PD_kernels.get_firingrate_from_buffer(data_,
-                                                                                      pop_firing_rate_dict)
-                    self._logger.info(pop_firing_rate_dict)
+                    # pop_firing_rate_dict = {}
+                    # pop_firing_rate_dict = self.PD_kernels.get_firingrate_from_buffer(data_,
+                    #                                                                   pop_firing_rate_dict)
+                    # self._logger.info(pop_firing_rate_dict)
                     # NOTE here put the call to compute mediator.compute_lfpy()
 
                     self._logger.debug(f"data transformed!")
