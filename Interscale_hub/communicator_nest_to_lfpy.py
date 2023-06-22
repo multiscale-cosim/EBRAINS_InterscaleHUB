@@ -46,7 +46,12 @@ class CommunicatorNestLFPY(BaseCommunicator):
         self._logger.info("Initialized")
 
         self._logger.info("Initiating kernels")
-        # self.PD_kernels = PotjansDiesmannKernels()
+
+        # Just a placeholder, will be received as input:
+        spike_recorder_ids = np.arange(7718, 7726)
+
+        # This is maybe not the best place to put this call?
+        self.PD_kernels = PotjansDiesmannKernels(spike_recorder_ids)
 
     def start(self, intra_communicator, inter_comm_receiver, inter_comm_sender):
         '''
@@ -77,6 +82,10 @@ class CommunicatorNestLFPY(BaseCommunicator):
         TODO: proper execution of stop command
         '''
         # self.__stop = True
+
+        self.PD_kernels.save_final_results()
+        self.PD_kernels.plot_final_results()
+
         try:
             raise NotImplementedError
         except NotImplementedError:
@@ -117,6 +126,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
         count = -1
         status_ = MPI.Status()
         self._logger.info("reading from buffer")
+
         running_head = 0  # head of the buffer, reset after each iteration
         while True:
             # TODO: This is still not correct. We only check for the Tag of the last rank.
@@ -149,7 +159,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
                 for source in range(self._num_sending):
                     # send 'ready' to the nest rank
                     # self._logger.info("send ready")
-                    self._comm_receiver.Send([np.array(True, dtype='b'),MPI.BOOL], dest=source, tag=0)
+                    self._comm_receiver.Send([np.array(True, dtype='b'), MPI.BOOL], dest=source, tag=0)
                     # receive package size info
                     self._comm_receiver.Recv([shape, 1, MPI.INT], source=source, tag=0, status=status_)
 
@@ -168,16 +178,13 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     # NOTE will be changed later to handle by rank =< 1
                     ########################################################
                     self._logger.debug(f"data received")
-                    self._logger.info(f"count: {count}, buffer now:{data_buffer}")
+                    #self._logger.info(f"count: {count}, buffer now:{data_buffer}")
 
                     # times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
                     # self._logger.debug(f"data after transformation: times: {times}, data: {data}")
-                    data_ = data_buffer
-                    data_ = data_.reshape(int(len(data_)/3), 3)
-                    # pop_firing_rate_dict = {}
-                    # pop_firing_rate_dict = self.PD_kernels.get_firingrate_from_buffer(data_,
-                    #                                                                   pop_firing_rate_dict)
-                    # self._logger.info(pop_firing_rate_dict)
+
+                    data_ = data_buffer.reshape(int(len(data_buffer)/3), 3)
+                    self.PD_kernels.update(data_)
                     # NOTE here put the call to compute mediator.compute_lfpy()
 
                     self._logger.debug(f"data transformed!")
@@ -213,6 +220,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     mpi_tag_received=status_.Get_tag())
                 # terminate with Error
                 return Response.ERROR
+
     
     def _transform(self):
         '''
