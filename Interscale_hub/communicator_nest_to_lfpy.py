@@ -47,13 +47,9 @@ class CommunicatorNestLFPY(BaseCommunicator):
 
         self._logger.info("Initiating kernels")
 
-        # Just a placeholder, will be received as input:
-        spike_recorder_ids = np.arange(7718, 7727)
 
-        # This is maybe not the best place to put this call?
-        self.PD_kernels = PotjansDiesmannKernels(spike_recorder_ids)
-
-    def start(self, intra_communicator, inter_comm_receiver, inter_comm_sender):
+    def start(self, intra_communicator, inter_comm_receiver,
+              inter_comm_sender, spike_recorder_ids):
         '''
         implements the abstract method to start
         1) receiving the data
@@ -63,6 +59,12 @@ class CommunicatorNestLFPY(BaseCommunicator):
         M:N mapping of MPI ranks, receive data, further process data.
         Receive on rank 0, do the rest on rest of the ranks.
         '''
+
+        # Just a placeholder, will be received as input:
+        # spike_recorder_ids = np.arange(7718, 7727)
+        # This is maybe not the best place to put this call?
+        self.PD_kernels = PotjansDiesmannKernels(spike_recorder_ids)
+
         # Rank-0 will receive the data
         if intra_communicator.Get_rank() == 0:
             # set inter_communicator for receiving the data
@@ -239,7 +241,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
             # TODO: change to inject the buffer in the wrapper method of mediator
             # times, data = spikerate.spike_to_rate(count, self.__databuffer[-2], self.__databuffer)
             self.__logger.debug("Transforming data")
-            times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
+            times, data = self._mediator.spikes_to_rate(count, size_at_index=-2)
             # TODO add call to LFPy kernel here
             self.__logger.debug(f"setting buffer ready")
             self._data_buffer_manager.set_ready_at(index=-1)
