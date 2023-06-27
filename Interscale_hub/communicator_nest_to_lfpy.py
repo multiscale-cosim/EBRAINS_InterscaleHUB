@@ -48,7 +48,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
         self._logger.info("Initiating kernels")
 
         # Just a placeholder, will be received as input:
-        spike_recorder_ids = np.arange(7718, 7726)
+        spike_recorder_ids = np.arange(7718, 7727)
 
         # This is maybe not the best place to put this call?
         self.PD_kernels = PotjansDiesmannKernels(spike_recorder_ids)
@@ -189,7 +189,6 @@ class CommunicatorNestLFPY(BaseCommunicator):
 
                     self._logger.debug(f"data transformed!")
                     ########################################################
-
 
                 # Mark as 'ready to receive next simulation step'
                 # self.__databuffer[-1] = 1
