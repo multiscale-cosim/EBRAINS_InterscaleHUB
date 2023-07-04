@@ -47,9 +47,8 @@ class CommunicatorNestLFPY(BaseCommunicator):
 
         self._logger.info("Initiating kernels")
 
-
     def start(self, intra_communicator, inter_comm_receiver,
-              inter_comm_sender, spike_recorder_ids):
+              inter_comm_sender, spike_detectors_ids):
         '''
         implements the abstract method to start
         1) receiving the data
@@ -63,7 +62,8 @@ class CommunicatorNestLFPY(BaseCommunicator):
         # Just a placeholder, will be received as input:
         # spike_recorder_ids = np.arange(7718, 7727)
         # This is maybe not the best place to put this call?
-        self.PD_kernels = PotjansDiesmannKernels(spike_recorder_ids)
+        self._logger.debug(f"spike_detectors_ids:{spike_detectors_ids}")
+        self.PD_kernels = PotjansDiesmannKernels(spike_detectors_ids)
 
         # Rank-0 will receive the data
         if intra_communicator.Get_rank() == 0:
