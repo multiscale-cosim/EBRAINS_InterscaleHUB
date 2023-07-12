@@ -88,11 +88,11 @@ class CommunicatorNestLFPY(BaseCommunicator):
         self.PD_kernels.save_final_results()
         self.PD_kernels.plot_final_results()
 
-        try:
-            raise NotImplementedError
-        except NotImplementedError:
-            self._logger.exception("stop() is not implemented yet")
-            return Response.OK
+        #try:
+        #    raise NotImplementedError
+        #except NotImplementedError:
+        #    self._logger.exception("stop() is not implemented yet")
+        return Response.OK
 
 
     def _receive(self):
