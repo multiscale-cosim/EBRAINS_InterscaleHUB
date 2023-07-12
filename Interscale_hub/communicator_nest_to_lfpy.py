@@ -29,8 +29,8 @@ class CommunicatorNestLFPY(BaseCommunicator):
     '''
     Implements the BaseCommunicator. It 
     1) Receives the data from NEST
-    2) Transform to LFPy signals
-    3) Save to a file
+    2) Calculates LFP signals through the kernel approach
+    3) Plots results, and saves to file
     '''
     def __init__(self, configurations_manager, log_settings,
                  data_buffer_manager, mediator):
@@ -176,7 +176,6 @@ class CommunicatorNestLFPY(BaseCommunicator):
                                              status=status_)
 
                     ########################################################
-                    # TODO add call to LFPy kernel here
                     # NOTE will be changed later to handle by rank =< 1
                     ########################################################
                     self._logger.debug(f"data received")
@@ -225,7 +224,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
     
     def _transform(self):
         '''
-        Transforms data to LFPy signals (multiple MPI ranks possible).
+        Transforms data to LFP signals (multiple MPI ranks possible).
         '''
         count = 0  # simulation/iteration step
         # status_ = MPI.Status()
