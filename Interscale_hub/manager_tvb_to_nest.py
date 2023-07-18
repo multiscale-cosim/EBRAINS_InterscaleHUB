@@ -17,7 +17,7 @@ import time
 
 from EBRAINS_InterscaleHUB.Interscale_hub.communicator_tvb_to_nest import CommunicatorTvbNest                      
 from EBRAINS_InterscaleHUB.Interscale_hub.manager_base import InterscaleHubBaseManager                                   
-from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_EXCHANGE_DIRECTION                        
+from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_EXCHANGE_DIRECTION, DATA_BUFFER_TYPES, DATA_BUFFER_STATES
 from EBRAINS_RichEndpoint.application_companion.common_enums import Response
 from EBRAINS_RichEndpoint.application_companion.common_enums import INTERCOMM_TYPE 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories 
@@ -63,19 +63,58 @@ class TvbToNestManager(InterscaleHubBaseManager):
         self.__tvb_nest_communicator = None
         # done: TODO: set via XML settings? POD
         # self.__buffersize = 2 + self._max_events  # 2 doubles: [start_time,end_time] of simulation step
+        
+        # NOTE input and output buffers are of the same size
         self.__buffersize = self._sci_params.max_events + self._sci_params.tvb_buffer_size_factor
-        self.__logger.debug("Init Params done.")
         
-        # 2) create buffer in self.__databuffer
-        self.__logger.debug("Creating MPI shared memory Buffer...")
-        self.__databuffer = self._get_mpi_shared_memory_buffer(self.__buffersize)
-        self.__logger.info("Buffer created.")
+        # TODO set it via XML configurations file
+        # NOTE Refactoring of communication protocols and data aggregation and
+        # management is needed when more than one ranks are used for
+        # intercommunication with simulators
+        self.__group_of_ranks_for_receiving  = [1]  # NOTE hardcoded
+        self.__group_of_ranks_for_sending  = [0]  # NOTE hardcoded
+
+        # NOTE all remaining ranks are transformers
+        self.__group_of_ranks_for_transformation = [x for x in range(self._intra_comm.Get_size())
+                                                    if x not in (self.__group_of_ranks_for_receiving + self.__group_of_ranks_for_sending) ]
+
+        # 2) MPI groups setup
+        self.__logger.info("setting up mpi groups...")
+        self.__setup_mpi_groups_and_comms()
+        self.__logger.info("mpi groups are set up.")
+
+        # 3) create buffers
+        self.__logger.info("Creating MPI shared memory Buffer...")
+        #  set up shared memory input buffer
+        self._databuffer_input = self._get_mpi_shared_memory_buffer(self.__buffersize, self._intra_comm, DATA_BUFFER_TYPES.INPUT)
+        self.__logger.info("input Buffer created")
+        if self._mpi_com_group_receivers and self._intra_comm.Get_rank() == self.__group_of_ranks_for_receiving[0]:
+            self.__set_initial_buffer_state(state=DATA_BUFFER_STATES.READY_TO_RECEIVE, buffer_type=DATA_BUFFER_TYPES.INPUT)
+
+        # sync up point so that initial state of the INPUT buffer could be set
+        self.__logger.debug("sync up point to set up the initial sta")
+        self._intra_comm.Barrier()
+        # check if bugger state is the same for all ranks
+        input_buffer_state = self._interscalehub_buffer_manager.get_at(index=-1,
+                                                    buffer_type=DATA_BUFFER_TYPES.INPUT)
+        self.__logger.debug(f"manager input_buffer_state: {input_buffer_state}")
         
-        # 3) Data channel setup
+        # 4) Data channel setup
+        self.__input_comm = None
+        self.__output_comm = None
         self.__logger.info("setting up data channels...")
         self.__data_channel_setup()
         self.__logger.info("data channels open and ready.")
         
+        self.__logger.info("initialized")
+    
+
+    def __set_initial_buffer_state(self, state, buffer_type):
+        self._interscalehub_buffer_manager.set_ready_state_at(index=-1,
+                                                     state=state,
+                                                     buffer_type=buffer_type)
+        self.__logger.debug(f"set up initial state: {state.name} of the buffer: {buffer_type.name}")
+
     def __data_channel_setup(self):
         """
         Open ports and register connection details.
@@ -92,17 +131,31 @@ class TvbToNestManager(InterscaleHubBaseManager):
         # which then calls make_connection() method
 
         # Case: data exchange direction is from NEST-to-TVB
-        if self._intra_comm.Get_rank() == 0:
+        if self._intra_comm.Get_rank() in self.__group_of_ranks_for_receiving:  
+            self.__input_comm, self.__input_port = self._set_up_connection(
+                direction=DATA_EXCHANGE_DIRECTION.TVB_TO_NEST.name,
+                intercomm_type=INTERCOMM_TYPE.RECEIVER.name)
+            self.__output_comm = None
+
+        elif self._intra_comm.Get_rank() in self.__group_of_ranks_for_sending:
+        # elif self._intra_comm.Get_rank() == 0:
             self.__output_comm, self.__output_port = self._set_up_connection(
                 direction=DATA_EXCHANGE_DIRECTION.TVB_TO_NEST.name,
                 intercomm_type=INTERCOMM_TYPE.SENDER.name)
             self.__input_comm = None
 
-        else:
-            self.__input_comm, self.__input_port = self._set_up_connection(
-                direction=DATA_EXCHANGE_DIRECTION.TVB_TO_NEST.name,
-                intercomm_type=INTERCOMM_TYPE.RECEIVER.name)
-            self.__output_comm = None
+    def __setup_mpi_groups_and_comms(self):
+        """
+            helper function to group mpi processes based on their functionality
+        """
+        if self._intra_comm.Get_rank() == self.__group_of_ranks_for_receiving[0]:  
+            self._mpi_com_group_receivers = self._setup_mpi_groups_including_ranks(self.__group_of_ranks_for_receiving)
+
+        elif self._intra_comm.Get_rank() == self.__group_of_ranks_for_sending[0]:
+            self._mpi_com_group_senders = self._setup_mpi_groups_including_ranks(self.__group_of_ranks_for_sending)
+
+        elif self._intra_comm.Get_rank() in self.__group_of_ranks_for_transformation:
+            self._mpi_com_group_transformers = self._setup_mpi_groups_including_ranks(self.__group_of_ranks_for_transformation)
 
     def start(self, id_first_spike_detector):
         """
@@ -122,7 +175,13 @@ class TvbToNestManager(InterscaleHubBaseManager):
         if self.__tvb_nest_communicator.start(self._intra_comm,
                                               self.__input_comm,
                                               self.__output_comm,
-                                              id_first_spike_detector) == Response.ERROR:
+                                              id_first_spike_detector,
+                                              self._mpi_com_group_senders,
+                                              self._mpi_com_group_receivers,
+                                              self._mpi_com_group_transformers,
+                                              self.__group_of_ranks_for_sending,
+                                              self.__group_of_ranks_for_receiving,
+                                              self.__group_of_ranks_for_transformation) == Response.ERROR:
             # Case a: something went wrong during the data exchange
             # NOTE the details are already been logged at the origin of the error
             # now terminate with error
@@ -140,7 +199,8 @@ class TvbToNestManager(InterscaleHubBaseManager):
         """
         self.__logger.info("Stop InterscaleHub and disconnect...")
         self.__tvb_nest_communicator.stop()
-        if self._intra_comm.Get_rank() == 0:
+        # if self._intra_comm.Get_rank() == 0:
+        if self._intra_comm.Get_rank() in self.__group_of_ranks_for_sending:
             self._intercomm_manager.close_and_finalize(self.__output_comm, self.__output_port)
-        else:
+        elif self._intra_comm.Get_rank() in self.__group_of_ranks_for_receiving:
             self._intercomm_manager.close_and_finalize(self.__input_comm, self.__input_port)

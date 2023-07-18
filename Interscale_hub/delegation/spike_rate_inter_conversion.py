@@ -102,14 +102,27 @@ class SpikeRateConvertor:
             time_step = data_buffer[index_data * 3 + 2]
             spiketrains[id_neurons - self.__first_id].append(time_step)
         for i in range(self.__nb_neurons):
-            if len(spiketrains[i]) > 1:
-                spiketrains[i] = SpikeTrain(np.concatenate(spiketrains[i]) * ms,
-                                            t_start=np.around(count * self.__time_synch, decimals=2),
-                                            t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
-            else:
-                spiketrains[i] = SpikeTrain(spiketrains[i] * ms,
-                                            t_start=np.around(count * self.__time_synch, decimals=2),
-                                            t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
+            try:
+                if len(spiketrains[i]) > 1:
+                    spiketrains[i] = SpikeTrain(np.concatenate(spiketrains[i]) * ms,
+                                                t_start=np.around(count * self.__time_synch, decimals=2),
+                                                t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
+                else:
+                    # if count > 16:
+                        # self.__logger.info(f"__DEBUG__ spiketrains[i]: {spiketrains[i]}, count: {count}, self.__time_synch: {self.__time_synch}")
+                        
+                    spiketrains[i] = SpikeTrain(spiketrains[i] * ms,
+                                                # t_start=np.around(count * self.__time_synch, decimals=2) - self.__time_synch,
+                                                t_start=np.around(count * self.__time_synch, decimals=2),
+                                                t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
+            except Exception:
+                self.__logger.exception("__DEBUG__ ERROR -- "
+                                        f"int(np.rint(data_size / 3): {int(np.rint(data_size / 3))}, "
+                                        f"spiketrains[{i}]: {spiketrains[i]}, "
+                                        f"count:{count}, "
+                                        f"t_start: {np.around(count * self.__time_synch, decimals=2)}, "
+                                        f"t_stop: {np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001}")
+                raise
         return spiketrains
 
     def spiketrains_to_rate(self, count, spiketrains):
@@ -146,7 +159,7 @@ class SpikeRateConvertor:
         times = np.array([count * self.__time_synch, (count + 1) * self.__time_synch], dtype='d')
         return times, rate
 
-    def rate_to_spikes(self, time_step, data_buffer):
+    def rate_to_spikes(self, time_step, rates, comm, root_transformer_rank):
         """
         implements the abstract method for the transformation of the
         rate to spikes.
@@ -169,23 +182,48 @@ class SpikeRateConvertor:
         # rate: Any  # e.g. 1D numpy array
         #     Spikes rate
 
-        rate = data_buffer  # NOTE: match argument names
-
-        rate *= self.__nb_synapse  # rate of poisson generator ( due property of poisson process)
-        rate += 1e-12
-        rate = np.abs(rate)  # avoid rate equals to zeros
-        signal = AnalogSignal(rate * Hz, t_start=(time_step[0] + 0.1) * ms,
-                              sampling_period=(time_step[1] - time_step[0]) / rate.shape[-1] * ms)
-        self.__logger.debug(f"rate: {rate}, signal: {signal}, time_step: {time_step}")
-        spikes_train = []
+        # rate of poisson generator ( due property of poisson process)
+        rate_of_poisson_generator = rates * self.__nb_synapse
+        rate_of_poisson_generator += 1e-12
+        rate_of_poisson_generator = np.abs(rate_of_poisson_generator)  # avoid rate equals to zeros
+        signal = AnalogSignal(rate_of_poisson_generator * Hz, t_start=(time_step[0] + 0.1) * ms,
+                              sampling_period=(time_step[1] - time_step[0]) / rate_of_poisson_generator.shape[-1] * ms)
+        if comm.Get_rank() == root_transformer_rank:
+            self.__logger.debug(f"rate: {rate_of_poisson_generator}, signal: {signal}, time_step: {time_step}")
+        partial_spike_trains = []
+        gathered_spike_trains = []
+        # import datetime
+        # print(f"__DEBUG 3__ time before conversion loop: {datetime.datetime.now()}, my_rank_in_mpi_group_transformers: {comm.Get_rank()}")
         # generate individual spike trains
         # to be removed or POD: for i in range(self.__nb_spike_generator[0]):
-        for i in range(self.__nb_spike_generator):
+        number_transformers = comm.Get_size()
+        transformer_rank = comm.Get_rank()  # NOTE this is the group rank
+        neuron_chunks_per_transformer = np.array_split(range(self.__nb_neurons), number_transformers)
+
+        for i in range(len(neuron_chunks_per_transformer[transformer_rank])):
             #
             # TO BE DONE: 'inhomogeneous_poisson_process' is deprecated; use 'NonStationaryPoissonProcess'.
             #
-            spikes_train.append(np.around(np.sort(inhomogeneous_poisson_process(signal, as_array=True)), decimals=1))
-        return spikes_train
+            # spikes_train.append(np.around(np.sort(inhomogeneous_poisson_process(signal, as_array=True)), decimals=1))
+            partial_spike_trains.append(np.around(np.sort(inhomogeneous_poisson_process(signal, as_array=True)), decimals=1))
+
+        # print(f"__DEBUG 4__ time after conversion loop: {datetime.datetime.now()}")
+        gathered_spike_trains = comm.gather(partial_spike_trains, root=root_transformer_rank)
+        
+        if transformer_rank == root_transformer_rank:
+            # take out the nested lists
+            spike_trains = gathered_spike_trains[0]
+            for rank in range(1, comm.Get_size()):
+                spike_trains += gathered_spike_trains[rank]
+            # temp = total_spike_trains[0] + total_spike_trains[1]
+            # print("\n"*2)
+            # print(f"__DEBUG 5__ time after gather: {datetime.datetime.now()}, len(total_spike_trains): {len(temp1)}")
+            #     #   f"temp1: {len(temp1)}")
+            # print("\n"*2)
+            return spike_trains
+        else:
+            self.__logger.debug(f"rank:{transformer_rank} finished with transformation")
+            return None
 
 
 '''

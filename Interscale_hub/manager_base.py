@@ -113,9 +113,14 @@ class InterscaleHubBaseManager(ABC):
         # to be removed: self._parameters = parameters
         self._transformer_id = 0  # NOTE: hardcoded
         self._id_proxy_nest_region = self._parameters['id_nest_region']
+
+        self._mpi_com_group_receivers = None
+        self._mpi_com_group_transformers = None
+        self._mpi_com_group_senders = None
+        self._databuffer_input =  None
         self._logger.info("initialized")
 
-    def _get_mpi_shared_memory_buffer(self, buffer_size):
+    def _get_mpi_shared_memory_buffer(self, buffer_size, comm, buffer_type):
         """
         Creates shared memory buffer for MPI One-sided-Communication.
         This is wrapper to buffer manager function which creates the mpi
@@ -126,7 +131,9 @@ class InterscaleHubBaseManager(ABC):
         self._interscalehub_buffer = \
             self._interscalehub_buffer_manager.create_mpi_shared_memory_buffer(
                 buffer_size,
-                self._intra_comm)
+                # self._intra_comm
+                comm,
+                buffer_type)
         return self._interscalehub_buffer
 
     def _set_up_connection(self, direction, intercomm_type):
@@ -141,7 +148,46 @@ class InterscaleHubBaseManager(ABC):
         """
         return self._intercomm_manager.open_port_accept_connection(
             direction, intercomm_type)
+    
+    def _setup_mpi_groups_excluding_ranks(self, ranks_to_exclude):
+        """ 
+            creates an MPI group communicator by reordering an existing group and taking
+            only unlisted members
 
+            Parameters
+            ----------
+
+            ranks_to_exclud: list
+                list of ranks to be excluded from the group
+        """
+
+        # NOTE be careful to not use group_comm on processes which are not part
+        # of the gorup
+        mpi_group = self._intra_comm.group.Excl(ranks_to_exclude)
+        group_comm = self._intra_comm.Create_group(mpi_group)
+        self._logger.info(f"MPI group created with size: {group_comm.Get_size()}, "
+                          f"ranks: {ranks_to_exclude}")
+        return group_comm
+    
+    def _setup_mpi_groups_including_ranks(self, ranks_to_include):
+        """ 
+            creates an MPI group communicator by reordering an existing group and taking
+            only listed members
+
+            Parameters
+            ----------
+            ranks_to_include: list
+                list of ranks to be included in the group
+        """
+        
+        # NOTE be careful to not use group_comm on processes which are not part
+        # of the gorup
+        mpi_group = self._intra_comm.group.Incl(ranks_to_include)
+        group_comm = self._intra_comm.Create_group(mpi_group)
+        self._logger.info(f"MPI group created with size: {group_comm.Get_size()}, "
+                          f"ranks: {ranks_to_include}")
+        return group_comm
+    
     @abstractmethod
     def start(self):
         """

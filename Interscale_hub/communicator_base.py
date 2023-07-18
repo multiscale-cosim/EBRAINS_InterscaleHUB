@@ -36,10 +36,19 @@ class BaseCommunicator(ABC):
         # variables commonly used across the child classes
         self._mediator = mediator
         self._data_buffer_manager = data_buffer_manager
-        self._comm_receiver = None
-        self._comm_sender = None
+        self._mpi_com_group_senders = None
+        self._mpi_com_group_receivers = None
+        self._mpi_com_group_transformers = None
         self._num_sending = 0
         self._num_receiving = 0
+        self._group_of_ranks_for_sending = None
+        self._group_of_ranks_for_receiving = None
+        self._group_of_ranks_for_transformation = None
+        self._comm_receiver = None
+        self._comm_sender = None
+        self._intra_comm = None
+        self._root_sending_rank = None
+        self._root_transformer_rank = None
 
     @abstractmethod
     def start(self,  intra_communicator, inter_communicator):

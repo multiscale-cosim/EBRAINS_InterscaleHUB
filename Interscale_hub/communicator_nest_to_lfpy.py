@@ -161,7 +161,8 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     # NOTE will be changed later to handle by rank =< 1
                     ########################################################
                     self._logger.debug(f"data received")
-                    self._logger.info(f"__DEBUG__ count: {count}, buffer now:{data_buffer[running_head:-2]}")
+                    running_head = shape[0]  # move running head
+                    self._logger.info(f"__DEBUG__ count: {count}, buffer now:{data_buffer[0:running_head]}")
                     # times, data = self._mediator.spikes_to_rate(count,size_at_index=-2)
                     # self._logger.debug(f"data after transformation: times: {times}, data: {data}")
                     
@@ -170,7 +171,7 @@ class CommunicatorNestLFPY(BaseCommunicator):
                     self._logger.info(f"__DEBUG__ data transformed!")
                     ########################################################
                     
-                    running_head += shape[0]  # move running head
+                    
                 # Mark as 'ready to receive next simulation step'
                 # self.__databuffer[-1] = 1
                 self._data_buffer_manager.set_ready_at(index=-1)

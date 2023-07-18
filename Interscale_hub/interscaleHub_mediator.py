@@ -10,7 +10,7 @@
 # Laboratory: Simulation Laboratory Neuroscience
 #       Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------ 
-from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_BUFFER_STATES
+from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_BUFFER_STATES, DATA_BUFFER_TYPES
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
@@ -29,33 +29,42 @@ class InterscaleHubMediator:
 
         self.__logger.info("initialized")
 
-    def rate_to_spikes(self):
+    def rate_to_spikes(self, buffer_type, comm, root_transformer_rank):
         '''converts rate to spike trains'''
-        if self.__data_buffer_manager.get_at(index=-2) == DATA_BUFFER_STATES.HEADER:
-            time_step = self.__data_buffer_manager.get_upto(index=2)
-            data_buffer = self.__data_buffer_manager.get_from(starting_index=2)
-        else:
-            mpi_shared_data_buffer = self.__data_buffer_manager.mpi_shared_memory_buffer
-            time_step = self.__data_buffer_manager.get_upto(index=2)
-            data_buffer = self.__data_buffer_manager.get_from_range(
-                start=2,
-                end=int(mpi_shared_data_buffer[-2]))
+        # NOTE the first two indexes are always the time steps
+        time_step = self.__data_buffer_manager.get_upto(end_index=2, buffer_type=buffer_type)
+        raw_data_end_index = int(self.__data_buffer_manager.get_at(index=-2, buffer_type=buffer_type))
+        rates = self.__data_buffer_manager.get_from_range(
+            start=2,
+            end=raw_data_end_index,
+            buffer_type=buffer_type)
+        if comm.Get_rank() == root_transformer_rank:
+            self.__logger.info(f"__DEBUG__ time_step: {time_step}, "
+                               f"raw_data_end_index:{raw_data_end_index}, "
+                               f"rates:{rates}")
         
-        spike_trains = self.__transformer.rate_to_spikes(time_step, data_buffer)
+        # NOTE Mark the input buffer as 'ready to receive next simulation step'
+        # TODO set it from communicator class instead
+        comm.Barrier()
+        self.__data_buffer_manager.set_ready_state_at(index=-1,
+                                            state=DATA_BUFFER_STATES.READY_TO_RECEIVE,
+                                            buffer_type=DATA_BUFFER_TYPES.INPUT)
+        spike_trains = self.__transformer.rate_to_spikes(time_step, rates, comm, root_transformer_rank)
         self.__logger.debug(f'spikes after conversion: {spike_trains}')
         return spike_trains
 
-    def spikes_to_rate(self, count, size_at_index):
+    def spikes_to_rate(self, count, size_at_index, buffer_type):
         '''
         Two step conversion from spikes/spike events to firing rates.
         '''
         # TODO refactor buffer indexing and buffer access inside analyzer and transformer
-        buffer_size = self.__data_buffer_manager.get_at(index=size_at_index)
-        data_buffer = self.__data_buffer_manager.mpi_shared_memory_buffer
+        buffer_size = self.__data_buffer_manager.get_at(index=size_at_index, buffer_type=buffer_type)
+        data_buffer = self.__data_buffer_manager.get_buffer(buffer_type=buffer_type)
         # 1) spike to spike_trains in transformer
         spike_trains = self.__transformer.spike_to_spiketrains(count, buffer_size, data_buffer)
         self.__logger.debug(f'transformed spike trains: {spike_trains}')
         # 2) spike_trains to rate in analyzer
-        times, data = self.__analyzer.spiketrains_to_rate(count, spike_trains)
-        self.__logger.debug(f'analyzed rates, time: {times}, data: {data}')
-        return times, data
+        times, rate = self.__analyzer.spiketrains_to_rate(count, spike_trains)
+        self.__logger.debug(f'analyzed rates, time: {times}, rate: {rate}')
+        self.__logger.info(f'__DEBUG__ analyzed time: {times}')
+        return times, rate
