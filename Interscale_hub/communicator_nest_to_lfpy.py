@@ -16,13 +16,12 @@ from mpi4py import MPI
 import time
 import numpy as np
 
+from userland.translation_functions.lfpykernels_PotjansDiesmann import PotjansDiesmannKernels
+
 from EBRAINS_InterscaleHUB.Interscale_hub.communicator_base import BaseCommunicator
 from EBRAINS_InterscaleHUB.Interscale_hub import interscalehub_utils
 from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_BUFFER_STATES
-
 from EBRAINS_RichEndpoint.application_companion.common_enums import Response
-
-from science.models.lfpykernels_PotjansDiesmann import PotjansDiesmannKernels
 
 
 class CommunicatorNestLFPY(BaseCommunicator):
