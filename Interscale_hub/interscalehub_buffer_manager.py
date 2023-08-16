@@ -117,7 +117,7 @@ class InterscaleHubBufferManager(metaclass=MetaInterscaleHubBuffer):
         # Case b: everything went good,
         # now create a 1D numpy array (buffer) whose data points to the
         # shared memory
-        
+
         if buffer_type == DATA_BUFFER_TYPES.INPUT:
             self.__logger.debug("creating input buffer")
             self.__databuffer_input = np.ndarray(

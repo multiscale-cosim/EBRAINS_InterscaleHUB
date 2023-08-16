@@ -27,6 +27,9 @@ from EBRAINS_RichEndpoint.application_companion.common_enums import Response
 # for any reason such as mybe throws some exception.
 
 
+# NOTE TODO check termination order for receive(), send() and transform()
+
+
 class CommunicatorTvbNest(BaseCommunicator):
     '''
     Implements the BaseCommunicator Class for implementing the operations such
@@ -152,7 +155,6 @@ class CommunicatorTvbNest(BaseCommunicator):
                                                              buffer_type=DATA_BUFFER_TYPES.INPUT)
             
             self._comm_receiver.Recv([data_buffer, MPI.DOUBLE], source=0, tag=MPI.ANY_TAG, status=status_)
-            
             # check status.tag 
             # Case a, simulation is running
             if status_.Get_tag() == 0:
@@ -203,7 +205,16 @@ class CommunicatorTvbNest(BaseCommunicator):
             elif status_.Get_tag() == 1:
                 self._logger.debug(f"__DEBUG__ _receive() tag ==1 ")
                 # everything goes fine, terminate the loop and respond with OK
-                self._logger.debug('TVB_to_NEST: End of receive function')
+                # self._logger.info('TVB_to_NEST: End of receive function')
+                # counter = 0
+                # while self._data_buffer_manager.get_at(index=-1,
+                #                                     buffer_type=DATA_BUFFER_TYPES.INPUT) != DATA_BUFFER_STATES.TERMINATE:
+                #     # wait until ready to receive new data (i.e. the
+                #     # Transformers has cleared the buffer)
+                #     counter += 1
+                #     time.sleep(0.001)
+                #     pass
+                self._logger.info('TVB_to_NEST: End of receive function')
                 return Response.OK
 
             # Case c, A 'bad' MPI tag is received
@@ -322,6 +333,10 @@ class CommunicatorTvbNest(BaseCommunicator):
         check = np.empty(1,dtype='b')
         status_ = MPI.Status()
         count = 0
+        # NOTE root_transformer_rank = rank id BEFORE group creation
+        # translated_root_rank = rank id WITHIN the new group (shifted by size of the other groups)
+        translated_root_rank = self._root_transformer_rank - (
+            len(self._group_of_ranks_for_sending) + len(self._group_of_ranks_for_receiving))
         while True:
             # Check if the simulation is still running
             ###############################################
@@ -329,16 +344,17 @@ class CommunicatorTvbNest(BaseCommunicator):
             # 1. receive tag from sender
             tag = None
             count += 1
+            
             self._logger.debug(f"__DEBUG__ _transform() start loop, count: {count}, time:{datetime.datetime.now()}")
 
             if self._intra_comm.Get_rank() == self._root_transformer_rank:
                 self._intra_comm.Recv([check, 1, MPI.CXX_BOOL], source=self._root_sending_rank, status=status_)
                 tag = status_.Get_tag()
             
-            # NOTE root_transformer_rank = rank id BEFORE group creation
-            # translated_root_rank = rank id WITHIN the new group (shifted by size of the other groups)
-            translated_root_rank = self._root_transformer_rank - (
-                len(self._group_of_ranks_for_sending) + len(self._group_of_ranks_for_receiving))
+            # # NOTE root_transformer_rank = rank id BEFORE group creation
+            # # translated_root_rank = rank id WITHIN the new group (shifted by size of the other groups)
+            # translated_root_rank = self._root_transformer_rank - (
+            #     len(self._group_of_ranks_for_sending) + len(self._group_of_ranks_for_receiving))
             tag = self._mpi_com_group_transformers.bcast(tag, root=translated_root_rank)
 
             if tag == 0:
@@ -389,12 +405,19 @@ class CommunicatorTvbNest(BaseCommunicator):
             elif tag == 1:
                     # NOTE: one sim step? inconsistent with receiving side
                     # continue sending data
-                    self._mpi_com_group_transformers.Barrier()
+                    # self._mpi_com_group_transformers.Barrier()
                     continue
             elif tag == 2:
                 # everything goes fine, terminate the loop and respond with OK
-                self._logger.debug('TVB_to_NEST: End of transform function')
+                # self._logger.debug('TVB_to_NEST: End of transform function')
                 self._mpi_com_group_transformers.Barrier()
+                 # Mark as 'ready to do analysis/transformation'
+                
+                # self._data_buffer_manager.set_ready_state_at(index=-1,
+                #                                             state=DATA_BUFFER_STATES.TERMINATE,
+                #                                             buffer_type=DATA_BUFFER_TYPES.INPUT)
+                # self._mpi_com_group_transformers.Barrier()
+                self._logger.debug('TVB_to_NEST: End of transform function')
                 return Response.OK
             else:
                 # A 'bad' MPI tag is received,

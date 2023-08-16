@@ -188,8 +188,9 @@ class SpikeRateConvertor:
         rate_of_poisson_generator = np.abs(rate_of_poisson_generator)  # avoid rate equals to zeros
         signal = AnalogSignal(rate_of_poisson_generator * Hz, t_start=(time_step[0] + 0.1) * ms,
                               sampling_period=(time_step[1] - time_step[0]) / rate_of_poisson_generator.shape[-1] * ms)
+                            #   sampling_period=((time_step[1]+0.1) - time_step[0]) / rate_of_poisson_generator.shape[-1] * ms)
         if comm.Get_rank() == root_transformer_rank:
-            self.__logger.debug(f"rate: {rate_of_poisson_generator}, signal: {signal}, time_step: {time_step}")
+            self.__logger.debug(f"__DEBUG__ rate: {rate_of_poisson_generator}, signal: {signal}, time_step: {time_step}, rate_of_poisson_generator.shape[-1]: {rate_of_poisson_generator.shape[-1]}")
         partial_spike_trains = []
         gathered_spike_trains = []
         # import datetime
@@ -206,6 +207,7 @@ class SpikeRateConvertor:
             #
             # spikes_train.append(np.around(np.sort(inhomogeneous_poisson_process(signal, as_array=True)), decimals=1))
             partial_spike_trains.append(np.around(np.sort(inhomogeneous_poisson_process(signal, as_array=True)), decimals=1))
+            # partial_spike_trains.append(np.around(np.sort([0.1]), decimals=1))
 
         # print(f"__DEBUG 4__ time after conversion loop: {datetime.datetime.now()}")
         gathered_spike_trains = comm.gather(partial_spike_trains, root=root_transformer_rank)
@@ -220,6 +222,7 @@ class SpikeRateConvertor:
             # print(f"__DEBUG 5__ time after gather: {datetime.datetime.now()}, len(total_spike_trains): {len(temp1)}")
             #     #   f"temp1: {len(temp1)}")
             # print("\n"*2)
+            # self.__logger.info(f"__DEBUG__ spike_trains: {spike_trains}")
             return spike_trains
         else:
             self.__logger.debug(f"rank:{transformer_rank} finished with transformation")

@@ -186,9 +186,16 @@ class TvbToNestManager(InterscaleHubBaseManager):
             # NOTE the details are already been logged at the origin of the error
             # now terminate with error
             self.__logger.critical('Got error while exchanging the data.')
+
+            # sync up point
+            self.__logger.debug("sync up point before terminating")
+            self._intra_comm.Barrier()
             return Response.ERROR
         else:
             # Case b: everything went well
+            # sync up point
+            self.__logger.debug("sync up point before terminating")
+            self._intra_comm.Barrier()
             return Response.OK
 
     def stop(self):

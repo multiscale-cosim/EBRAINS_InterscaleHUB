@@ -16,7 +16,7 @@ import time
 
 from EBRAINS_InterscaleHUB.Interscale_hub.communicator_nest_to_tvb import CommunicatorNestTvb
 from EBRAINS_InterscaleHUB.Interscale_hub.manager_base import InterscaleHubBaseManager
-from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_EXCHANGE_DIRECTION, DATA_BUFFER_TYPES
+from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_EXCHANGE_DIRECTION, DATA_BUFFER_TYPES, DATA_BUFFER_STATES
 from EBRAINS_RichEndpoint.application_companion.common_enums import INTERCOMM_TYPE, Response
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
@@ -63,6 +63,11 @@ class NestToTvbManager(InterscaleHubBaseManager):
         # Look at manager_tvb_to_nest.py
         self._databuffer_input = self._get_mpi_shared_memory_buffer(self.__buffersize, self._intra_comm, DATA_BUFFER_TYPES.INPUT)
         self.__logger.info("Buffer created.")
+
+        # initialize the input buffer state
+        self._interscalehub_buffer_manager.set_ready_state_at(index=-1,
+                                                     state=DATA_BUFFER_STATES.READY_TO_RECEIVE,
+                                                     buffer_type=DATA_BUFFER_TYPES.INPUT)
 
         # 3) Data channel setup
         self.__logger.info("setting up data channels...")
