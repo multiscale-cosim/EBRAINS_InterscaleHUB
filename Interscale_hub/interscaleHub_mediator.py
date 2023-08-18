@@ -53,18 +53,41 @@ class InterscaleHubMediator:
         self.__logger.debug(f'spikes after conversion: {spike_trains}')
         return spike_trains
 
-    def spikes_to_rate(self, count, size_at_index, buffer_type):
+    def spikes_to_rate(self, count, size_at_index, buffer_type, comm,
+                       root_transformer_rank):
         '''
         Two step conversion from spikes/spike events to firing rates.
         '''
         # TODO refactor buffer indexing and buffer access inside analyzer and transformer
-        buffer_size = self.__data_buffer_manager.get_at(index=size_at_index, buffer_type=buffer_type)
-        data_buffer = self.__data_buffer_manager.get_buffer(buffer_type=buffer_type)
+        times = None
+        rate = None
+        raw_data_end_index = int(self.__data_buffer_manager.get_at(index=size_at_index, buffer_type=buffer_type))
+        # data_buffer = self.__data_buffer_manager.get_buffer(buffer_type=buffer_type)
+        data = self.__data_buffer_manager.get_from_range(
+            start=0,
+            end=raw_data_end_index,
+            buffer_type=buffer_type)
+        
+        # NOTE Mark the input buffer as 'ready to receive next simulation step'
+        # TODO set it from communicator class instead
+        comm.Barrier()
+        self.__data_buffer_manager.set_ready_state_at(index=-1,
+                                            state=DATA_BUFFER_STATES.READY_TO_RECEIVE,
+                                            buffer_type=DATA_BUFFER_TYPES.INPUT)
         # 1) spike to spike_trains in transformer
-        spike_trains = self.__transformer.spike_to_spiketrains(count, buffer_size, data_buffer)
+        spike_trains = self.__transformer.spike_to_spiketrains(count,
+                                                               raw_data_end_index,
+                                                               data,
+                                                               comm,
+                                                               root_transformer_rank)
         self.__logger.debug(f'transformed spike trains: {spike_trains}')
+        
         # 2) spike_trains to rate in analyzer
-        times, rate = self.__analyzer.spiketrains_to_rate(count, spike_trains)
-        self.__logger.debug(f'analyzed rates, time: {times}, rate: {rate}')
-        self.__logger.info(f'__DEBUG__ analyzed time: {times}')
+        # NOTE spiketrains_to_rate calls external lib (elephant) to analyze and
+        # cannot be speedup by InterscaleHub side so call it only on root rank
+        if comm.Get_rank() == root_transformer_rank:
+            times, rate = self.__analyzer.spiketrains_to_rate(count, spike_trains)
+        # wait until root rank is done with analysis
+        comm.Barrier()
+        self.__logger.debug(f'analyzed times, rates: {times}, rate: {rate}')
         return times, rate

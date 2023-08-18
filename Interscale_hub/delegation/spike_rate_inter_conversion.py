@@ -73,7 +73,8 @@ class SpikeRateConvertor:
 
         self.__logger.info("Initialised")
 
-    def spike_to_spiketrains(self, count, data_size, data_buffer):
+    def spike_to_spiketrains(self, count, raw_data_end_index, data, comm,
+                             root_transformer_rank):
         """
         get the spike time from the buffer and order them by neurons
         
@@ -97,11 +98,19 @@ class SpikeRateConvertor:
         """
         spiketrains = [[] for i in range(self.__nb_neurons)]
         # get all the time of the spike and add them in a histogram
-        for index_data in range(int(np.rint(data_size / 3))):
-            id_neurons = int(data_buffer[index_data * 3 + 1])
-            time_step = data_buffer[index_data * 3 + 2]
+        for index_data in range(int(np.rint(raw_data_end_index / 3))):
+            id_neurons = int(data[index_data * 3 + 1])
+            time_step = data[index_data * 3 + 2]
             spiketrains[id_neurons - self.__first_id].append(time_step)
-        for i in range(self.__nb_neurons):
+        
+        number_transformers = comm.Get_size()
+        transformer_rank = comm.Get_rank()  # NOTE this is the group rank
+        neuron_chunks_per_transformer = np.array_split(range(self.__nb_neurons), number_transformers)
+        partial_spike_trains = []
+        gathered_spike_trains = []
+        
+        # for i in range(self.__nb_neurons):
+        for i in range(len(neuron_chunks_per_transformer[transformer_rank])):
             try:
                 if len(spiketrains[i]) > 1:
                     spiketrains[i] = SpikeTrain(np.concatenate(spiketrains[i]) * ms,
@@ -117,13 +126,28 @@ class SpikeRateConvertor:
                                                 t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
             except Exception:
                 self.__logger.exception("__DEBUG__ ERROR -- "
-                                        f"int(np.rint(data_size / 3): {int(np.rint(data_size / 3))}, "
+                                        f"int(np.rint(data_size / 3): {int(np.rint(raw_data_end_index / 3))}, "
                                         f"spiketrains[{i}]: {spiketrains[i]}, "
                                         f"count:{count}, "
                                         f"t_start: {np.around(count * self.__time_synch, decimals=2)}, "
                                         f"t_stop: {np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001}")
                 raise
-        return spiketrains
+
+        
+        gathered_spike_trains = comm.gather(spiketrains, root=root_transformer_rank)
+        
+        if transformer_rank == root_transformer_rank:
+            # flatten the nested lists
+            # print("\n"*2)
+            # print(f"gathered_spike_trains:{gathered_spike_trains}")
+            # print("\n"*2)
+            spike_trains = gathered_spike_trains[0]
+            for rank in range(1, comm.Get_size()):
+                spike_trains += gathered_spike_trains[rank]
+            return spike_trains
+        else:
+            self.__logger.debug(f"rank:{transformer_rank} finished with transformation")
+            return None
 
     def spiketrains_to_rate(self, count, spiketrains):
         """
@@ -213,7 +237,7 @@ class SpikeRateConvertor:
         gathered_spike_trains = comm.gather(partial_spike_trains, root=root_transformer_rank)
         
         if transformer_rank == root_transformer_rank:
-            # take out the nested lists
+            # flatten the nested lists
             spike_trains = gathered_spike_trains[0]
             for rank in range(1, comm.Get_size()):
                 spike_trains += gathered_spike_trains[rank]

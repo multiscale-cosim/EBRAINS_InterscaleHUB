@@ -35,6 +35,8 @@ class InterscaleHubBaseManager(ABC):
     """
 
     def __init__(self, parameters, direction, configurations_manager, log_settings,
+                 group_of_ranks_for_receiving,
+                 group_of_ranks_for_sending,
                  sci_params_xml_path_filename=''):
         """
         Init params, create buffer, open ports, accept connections
@@ -110,23 +112,58 @@ class InterscaleHubBaseManager(ABC):
         # self._max_events = 1000000  # max. expected number of events per step
         # self._max_events = self._sci_params.max_events  # NOTE: it could be functional rather than scientific one
 
-        # to be removed: self._parameters = parameters
-        self._transformer_id = 0  # NOTE: hardcoded
-        self._id_proxy_nest_region = self._parameters['id_nest_region']
+        # TODO to be removed: self._parameters = parameters
+        # self._transformer_id = 0  # NOTE: hardcoded
+        # self._id_proxy_nest_region = self._parameters['id_nest_region']
 
         self._mpi_com_group_receivers = None
         self._mpi_com_group_transformers = None
         self._mpi_com_group_senders = None
         self._databuffer_input =  None
+
+        self._group_of_ranks_for_receiving = group_of_ranks_for_receiving  # NOTE hardcoded see child class for details
+        self._group_of_ranks_for_sending = group_of_ranks_for_sending  # NOTE hardcoded see child class for details
+
+        # NOTE all remaining ranks are transformers
+        self._group_of_ranks_for_transformation = [x for x in range(self._intra_comm.Get_size())
+                                                    if x not in (self._group_of_ranks_for_receiving + self._group_of_ranks_for_sending) ]
+        
         self._logger.info("initialized")
 
+    def _set_initial_buffer_state(self, state, buffer_type):
+        input_buffer_state = self._interscalehub_buffer_manager.get_at(index=-1,
+                                                                        buffer_type=buffer_type)
+        self._logger.info(f"__DEBUG__ before setting input_buffer_state: {input_buffer_state}")
+        ######
+        self._interscalehub_buffer_manager.set_ready_state_at(index=-1,
+                                                              state=state,
+                                                              buffer_type=buffer_type)
+        self._logger.info(f"__DEBUG__ set initial state: {state.name} of the buffer: {buffer_type.name}")
+        ######
+        input_buffer_state = self._interscalehub_buffer_manager.get_at(index=-1,
+                                                                        buffer_type=buffer_type)
+        self._logger.info(f"__DEBUG__ after setting input_buffer_state: {input_buffer_state}")
+
+    def _setup_mpi_groups_and_comms(self):
+        """
+            helper function to group mpi processes based on their functionality
+        """
+        if self._intra_comm.Get_rank() == self._group_of_ranks_for_receiving[0]:  
+            self._mpi_com_group_receivers = self._setup_mpi_groups_including_ranks(self._group_of_ranks_for_receiving)
+
+        elif self._intra_comm.Get_rank() == self._group_of_ranks_for_sending[0]:
+            self._mpi_com_group_senders = self._setup_mpi_groups_including_ranks(self._group_of_ranks_for_sending)
+
+        elif self._intra_comm.Get_rank() in self._group_of_ranks_for_transformation:
+            self._mpi_com_group_transformers = self._setup_mpi_groups_including_ranks(self._group_of_ranks_for_transformation)
+
+    
     def _get_mpi_shared_memory_buffer(self, buffer_size, comm, buffer_type):
         """
         Creates shared memory buffer for MPI One-sided-Communication.
         This is wrapper to buffer manager function which creates the mpi
         shared memory buffer.
         """
-
         # create an MPI shared memory buffer
         self._interscalehub_buffer = \
             self._interscalehub_buffer_manager.create_mpi_shared_memory_buffer(

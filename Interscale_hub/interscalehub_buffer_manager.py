@@ -53,8 +53,8 @@ class InterscaleHubBufferManager(metaclass=MetaInterscaleHubBuffer):
     def get_buffer(self, buffer_type):
         if buffer_type == DATA_BUFFER_TYPES.INPUT:
             return self.databuffer_input
-        elif buffer_type == DATA_BUFFER_TYPES.OUTPUT:
-            return self.databuffer_output
+        # elif buffer_type == DATA_BUFFER_TYPES.OUTPUT:
+        #     return self.databuffer_output
         else:
             self.__terminate_with_error(f"unknown data buffer type. {buffer_type}")
 

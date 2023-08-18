@@ -26,13 +26,11 @@ class DATA_EXCHANGE_DIRECTION(enum.IntEnum):
 @enum.unique
 class DATA_BUFFER_STATES(enum.IntEnum):
     """ Enum class for the states of data buffer"""
-    # HEADER = 0
-    READY_TO_RECEIVE = 0
-    READY_TO_SEND = 1
+    READY_TO_SEND = 0
+    READY_TO_RECEIVE = 1
     READY_TO_TRANSFORM = 2
-    WAIT = 4
-    TERMINATE = 5
-    # READY = 3
+    WAIT = 3
+    TERMINATE = 4
     
 
 @enum.unique

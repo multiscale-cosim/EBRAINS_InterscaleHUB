@@ -41,7 +41,8 @@ class Transformer:
                                                       sci_params=sci_params)
         self.__logger.info("Initialised")
     
-    def spike_to_spiketrains(self, count, data_size, data_buffer):
+    def spike_to_spiketrains(self, count, raw_data_end_index, data, comm,
+                             root_transformer_rank):
         """Transforms the data from one format to another .
         
         Parameters
@@ -60,8 +61,11 @@ class Transformer:
         ------
             returns the spike trains from spikes
         """
-        return self.__elephant_delegator.spike_to_spiketrains(count, data_size,
-                                                              data_buffer)
+        return self.__elephant_delegator.spike_to_spiketrains(count,
+                                                              raw_data_end_index,
+                                                              data,
+                                                              comm,
+                                                              root_transformer_rank)
 
     def rate_to_spikes(self, time_step, data_buffer, mpi_com_group_transformers, root_transformer_rank):
         """Transforms the data from one format to another .

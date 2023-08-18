@@ -133,6 +133,9 @@ class CommunicatorTvbNest(BaseCommunicator):
             self._data_buffer_manager.set_header_at(index=-2,
                                                 header=0,
                                                 buffer_type=DATA_BUFFER_TYPES.INPUT)
+        # sync up point to set the buffer header
+        self._logger.debug("sync up point to set up the buffer head")
+        self._mpi_com_group_receivers.Barrier()
         
         # init placeholder for incoming data
         size = np.empty(1, dtype='i') # size of the rate-array
@@ -341,7 +344,7 @@ class CommunicatorTvbNest(BaseCommunicator):
             # Check if the simulation is still running
             ###############################################
             # TODO 
-            # 1. receive tag from sender
+            # 1. receive tag from sender group
             tag = None
             count += 1
             
@@ -360,7 +363,7 @@ class CommunicatorTvbNest(BaseCommunicator):
             if tag == 0:
                 # Case a, simulation is running, do transformation
 
-                # STEP 1. Wait until there is some data in Input Buffer
+                # STEP 1. Wait until recceivers receive data in Input Buffer
                 counter = 0
                 while self._data_buffer_manager.get_at(index=-1,
                                                         buffer_type=DATA_BUFFER_TYPES.INPUT) != DATA_BUFFER_STATES.READY_TO_TRANSFORM:
@@ -395,6 +398,9 @@ class CommunicatorTvbNest(BaseCommunicator):
                 ###############################################
 
                 # sync up point
+                # wait until root transformer rank sends the data
+                self._logger.debug("waiting for root to finish with sending"
+                                   " the data")
                 self._mpi_com_group_transformers.Barrier()
 
                 # continue transformation
