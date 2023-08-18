@@ -95,7 +95,7 @@ class NestToLFPyManager(InterscaleHubBaseManager):
                 intercomm_type=INTERCOMM_TYPE.SENDER.name)
             self.__input_comm = None
 
-    def start(self):
+    def start(self, spike_detectors_ids):
         """
        implementation of abstract method to start transformation and
         exchanging the data with TVB and NEST.
@@ -114,7 +114,8 @@ class NestToLFPyManager(InterscaleHubBaseManager):
         # start exchanging the data
         if self.__nest_lfpy_communicator.start(self._intra_comm,
                                               self.__input_comm,
-                                              self.__output_comm) == Response.ERROR:
+                                              self.__output_comm,
+                                              spike_detectors_ids) == Response.ERROR:
             # Case a: something went wrong during the data exchange
             # NOTE the details are already been logged at the origin of the error
             # now terminate with error
