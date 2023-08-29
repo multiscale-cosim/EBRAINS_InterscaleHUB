@@ -110,10 +110,6 @@ class TransformerCommunicator:
 
             # Test, check the current status of simulation
             # Case a, simulation is still running
-            if self._intra_comm.Get_rank() == self._root_transformer_rank:
-                print("\n"*2)
-                print(f"__TRANSLATOR__: is_simulation_running : {is_simulation_running}")
-                print("\n"*2)
             if is_simulation_running:
                 # STEP 1. Wait until recceivers receive data in Input Buffer
                 debug_log_message(self._my_rank,
