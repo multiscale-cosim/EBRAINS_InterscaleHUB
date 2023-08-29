@@ -18,14 +18,22 @@ from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_dir
 
 class BaseCommunicator(ABC):
     '''
-    Abstract Base Class which abstracts the
-    1) data exchange with applications/simulators
-    2) transformation of the data to required scale
+        Abstract Base Class which abstracts the data exchange with
+        applications/simulators
     '''
     def __init__(self, configurations_manager, log_settings,
-                 communicator_name, data_buffer_manager, mediator):
-        '''Base Class initializer to setting up the variables common to all child
-        classes'''
+                 communicator_name,
+                 data_buffer_manager,
+                 intra_comm,
+                 receiver_inter_comm,
+                 sender_inter_comm,
+                 sender_group_ranks,
+                 receiver_group_ranks,
+                 root_transformer_rank):
+        '''
+        Base Class initializer to setting up the variables common to all child
+        classes
+        '''
         self._log_settings = log_settings
         self._configurations_manager = configurations_manager
         self._logger = self._configurations_manager.load_log_configurations(
@@ -34,34 +42,19 @@ class BaseCommunicator(ABC):
                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         
         # variables commonly used across the child classes
-        self._mediator = mediator
         self._data_buffer_manager = data_buffer_manager
-        self._mpi_com_group_senders = None
-        self._mpi_com_group_receivers = None
-        self._mpi_com_group_transformers = None
-        self._num_sending = 0
-        self._num_receiving = 0
-        self._group_of_ranks_for_sending = None
-        self._group_of_ranks_for_receiving = None
-        self._group_of_ranks_for_transformation = None
-        self._comm_receiver = None
-        self._comm_sender = None
-        self._intra_comm = None
-        self._root_sending_rank = None
-        self._root_transformer_rank = None
+        self._group_of_ranks_for_sending = sender_group_ranks
+        self._group_of_ranks_for_receiving = receiver_group_ranks
+        self._root_transformer_rank = root_transformer_rank
+        self._receiver_inter_comm = receiver_inter_comm
+        self._sender_inter_comm = sender_inter_comm
+        self._intra_comm = intra_comm
+        self._my_rank = self._intra_comm.Get_rank()
 
     @abstractmethod
-    def start(self,  intra_communicator, inter_communicator):
-        """Starts the pivot operations.
+    def send(self):
+        """sends the data
         
-        Parameters
-        ----------
-        intra_communicator : MPI Intracommunicator
-            for communicating within a group
-
-        inter_communicator : MPI Intercommunicator
-            communicates between the groups
-
         Returns
         ------
             return code as int to indicate an un/successful termination.
@@ -69,8 +62,8 @@ class BaseCommunicator(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def stop(self):
-        """Stops the pivot operations.
+    def receive(self):
+        """receives the data
 
         Returns
         ------

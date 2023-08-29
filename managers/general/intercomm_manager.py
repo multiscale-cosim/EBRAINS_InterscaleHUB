@@ -14,7 +14,6 @@
 
 import os
 from mpi4py import MPI
-import pathlib
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 from EBRAINS_RichEndpoint.application_companion.common_enums import INTEGRATED_INTERSCALEHUB_APPLICATION as INTERSCALE_HUB
@@ -40,7 +39,7 @@ class IntercommManager:
                                         name="IntercommManager",
                                         log_configurations=self._log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
-        self.__logger.info("Initialised")
+        self.__logger.debug("Initialised")
     
     def open_port_accept_connection(self, direction, intercomm_type):
         '''
@@ -77,6 +76,10 @@ class IntercommManager:
         '''
         helper function to format the port name to be send as a response
         '''
+        # TODO prepare the response in such a way that Application Companions
+        # of Simulators could filter the connection info need by them
+        # (see Application Companions for details where they get the proxies of
+        # InterscaleHubs from Registry Service)
         interscalehub_endpoint_address = \
             {
                 INTERSCALE_HUB.PID.name: os.getpid(),

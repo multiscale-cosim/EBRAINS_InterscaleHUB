@@ -14,8 +14,7 @@
 from mpi4py import MPI
 import numpy as np
 
-from EBRAINS_InterscaleHUB.Interscale_hub.interscalehub_enums import DATA_BUFFER_STATES, DATA_BUFFER_TYPES
-
+from EBRAINS_InterscaleHUB.common.interscalehub_enums import  DATA_BUFFER_TYPES
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
 
@@ -34,7 +33,7 @@ class MetaInterscaleHubBuffer(type):
         return cls._instances[cls]
 
 
-class InterscaleHubBufferManager(metaclass=MetaInterscaleHubBuffer):
+class BufferManager(metaclass=MetaInterscaleHubBuffer):
     """
     InterscaleHub data buffer which stores the in-transit data.
     """

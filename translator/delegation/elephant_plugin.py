@@ -36,7 +36,7 @@ class ElephantPlugin:
                                         name="Elephant -- ElephantPlugin",
                                         log_configurations=self._log_settings,
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
-        self.__logger.info("Initialised")
+        self.__logger.debug("Initialised")
 
     def online_statistics():
         '''

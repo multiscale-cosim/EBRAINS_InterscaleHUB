@@ -11,8 +11,9 @@
 # Laboratory: Simulation Laboratory Neuroscience
 # Team: Multi-scale Simulation and Design
 # ------------------------------------------------------------------------------
-from EBRAINS_InterscaleHUB.Interscale_hub.delegation.elephant_plugin import ElephantPlugin
-from EBRAINS_InterscaleHUB.Interscale_hub.delegation.spike_rate_inter_conversion import SpikeRateConvertor
+from EBRAINS_InterscaleHUB.translator.delegation.elephant_plugin import ElephantPlugin
+from EBRAINS_InterscaleHUB.translator.delegation.spike_rate_inter_conversion import SpikeRateConvertor
+from EBRAINS_InterscaleHUB.common.interscalehub_utils import debug_log_message
 
 from EBRAINS_ConfigManager.global_configurations_manager.xml_parsers.default_directories_enum import DefaultDirectories
 
@@ -22,7 +23,7 @@ class ElephantDelegator:
     NOTE: some functionalities only had on attribute/method, e.g. rate_to_spike.
     -> new Class "spike_rate_conversion" contains all related functionalities.
     """
-    def __init__(self, param, configurations_manager, log_settings, sci_params=None):
+    def __init__(self, configurations_manager, log_settings, sci_params=None):
         """
         """
         self._log_settings = log_settings
@@ -33,7 +34,6 @@ class ElephantDelegator:
                                         target_directory=DefaultDirectories.SIMULATION_RESULTS)
         # init members
         self.spike_rate_conversion = SpikeRateConvertor(
-                                        param, 
                                         configurations_manager, 
                                         log_settings,
                                         sci_params=sci_params)
@@ -44,7 +44,9 @@ class ElephantDelegator:
         # dir member methods
         self.spikerate_methods = [f for f in dir(SpikeRateConvertor) if not f.startswith('_')]
         self.plugin_methods = [f for f in dir(ElephantPlugin) if not f.startswith('_')]
-        self.__logger.info("Initialised")
+        debug_log_message(rank=0,  # hardcoded
+                          logger=self.__logger,
+                          msg="Initialised")
 
     def __getattr__(self, func):
         """

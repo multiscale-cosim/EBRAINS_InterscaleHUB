@@ -38,3 +38,11 @@ class DATA_BUFFER_TYPES(enum.IntEnum):
     """ Enum class for different buffer types"""
     INPUT = 0
     OUTPUT = 1
+
+
+@enum.unique
+class TRANSLATION_FUNCTION_ID(enum.IntEnum):
+    """ Enum class for translation funciton ids"""
+    SPIKE_TO_RATES = 0
+    RATE_TO_SPIKES = 1
+    
