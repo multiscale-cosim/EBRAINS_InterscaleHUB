@@ -104,6 +104,8 @@ class Translator:
         
         # 3) convert the spike_trains to rate
         # NOTE only root rank has the result (spike_trains)
+        times = None
+        rate  = None
         if comm.Get_rank() == root_transformer_rank:
             times, rate = self.__elephant_delegator.spiketrains_to_rate(count, spike_trains)
         # wait until root rank is done with analysis

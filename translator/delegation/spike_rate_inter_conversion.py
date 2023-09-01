@@ -54,28 +54,30 @@ class SpikeRateConvertor:
         """
         number_transformers = comm.Get_size()
         transformer_rank = comm.Get_rank()  # NOTE this is the group rank
-        neuron_chunks_per_transformer = np.array_split(range(self.__nb_neurons), number_transformers)
-        gathered_spike_trains = []
-        # split the computation
-        for i in range(len(neuron_chunks_per_transformer[transformer_rank])):
+        # split the spike_events as per number of transformers
+        spike_events_per_transformer = np.array_split(range(len(spike_events)),
+                                                      number_transformers)
+        partial_spike_trains = []
+
+        # compute SpikeTrains in parallel on all Transformers
+        for i in spike_events_per_transformer[transformer_rank]:
             try:
                 if len(spike_events[i]) > 1:
-                    spike_events[i] = SpikeTrain(np.concatenate(spike_events[i]) * ms,
+                    partial_spike_trains.append(SpikeTrain(np.concatenate(spike_events[i]) * ms,
                                                 t_start=np.around(count * self.__time_synch, decimals=2),
-                                                t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
+                                                t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001))
                 else:
-                    spike_events[i] = SpikeTrain(spike_events[i] * ms,
+                    partial_spike_trains.append(SpikeTrain(spike_events[i] * ms,
                                                 t_start=np.around(count * self.__time_synch, decimals=2),
-                                                t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001)
+                                                t_stop=np.around((count + 1) * self.__time_synch, decimals=2) + 0.0001))
             except Exception as e:
                 self.__logger.exception(e)
                 raise
-
-        # gather the results
-        gathered_spike_trains = comm.gather(spike_events, root=root_transformer_rank)
         
+        # gather the results on root
+        gathered_spike_trains = comm.gather(partial_spike_trains, root=root_transformer_rank)
+        # flatten the nested lists on root
         if transformer_rank == root_transformer_rank:
-            # flatten the nested lists
             spike_trains = gathered_spike_trains[0]
             for rank in range(1, comm.Get_size()):
                 spike_trains += gathered_spike_trains[rank]
@@ -119,6 +121,7 @@ class SpikeRateConvertor:
 
         # gather the results at root_transformer_rank
         gathered_spike_trains = comm.gather(partial_spike_trains, root=root_transformer_rank)
+        # flatten the nested lists on root
         if transformer_rank == root_transformer_rank:
             spike_trains = gathered_spike_trains[0]
             for rank in range(1, comm.Get_size()):
