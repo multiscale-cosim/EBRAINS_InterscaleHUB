@@ -84,7 +84,7 @@ class BaseManager(ABC):
         
         # 1.4) class variables
         self._path = self._parameters['path']
-        self._databuffer_input =  None
+        self._databuffer_input = None
         self._buffer_size = buffer_size
         # INTER = between applications
         self._receiver_inter_comm = None
@@ -97,7 +97,7 @@ class BaseManager(ABC):
         self._sender_group_ranks = sender_group_ranks  # NOTE hardcoded
         # NOTE all remaining ranks are transformers
         self._transformer_group_ranks = [x for x in range(self._intra_comm.Get_size())
-                                                    if x not in (self._receiver_group_ranks + self._sender_group_ranks) ]
+                                         if x not in (self._receiver_group_ranks + self._sender_group_ranks) ]
         
         # STEP 2) setup MPI groups
         info_log_message(self._my_rank,
@@ -157,7 +157,6 @@ class BaseManager(ABC):
 
         elif self._intra_comm.Get_rank() in self._transformer_group_ranks:
             self._transformer_intra_comm = self._setup_mpi_groups_including_ranks(self._transformer_group_ranks)
-
     
     def _get_mpi_shared_memory_buffer(self, buffer_size, comm, buffer_type):
         """

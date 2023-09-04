@@ -62,7 +62,7 @@ class TvbNestManager(BaseManager):
         # needed when more than one ranks are used for
         # intercommunication (sending, receiving) with simulators
         if self.__direction == DATA_EXCHANGE_DIRECTION.TVB_TO_NEST:
-            receiver_group_ranks = [1]  # NOTE hardcoded rank-1  ###not finished
+            receiver_group_ranks = [1]  # NOTE hardcoded rank-1
             sender_group_ranks = [0]  # NOTE hardcoded rank-0
             self.__translation_function_id = TRANSLATION_FUNCTION_ID.RATE_TO_SPIKES
             # set buffer size
@@ -99,7 +99,7 @@ class TvbNestManager(BaseManager):
                              "Start data transfer and use case science...")
 
             # STEP 1) initialize usecase parameters
-            root_transformer_rank = self._transformer_group_ranks[0]  # root transformer rank
+            root_transformer_rank = self._transformer_group_ranks[0]
 
             # NOTE TODO change it to keyword arguments to receive a
             # dictionary of parameters from adapter
@@ -121,15 +121,15 @@ class TvbNestManager(BaseManager):
             
             self.__tvb_communicator = TVBCommunicator(
                self.__configurations_manager,
-                self.__log_settings,
-                self._data_buffer_manager,
-                self._intra_comm,
-                self._receiver_inter_comm,
-                self._sender_inter_comm,
-                self._sender_group_ranks,
-                self._receiver_group_ranks,
-                root_transformer_rank  # root transformer rank
-                )
+               self.__log_settings,
+               self._data_buffer_manager,
+               self._intra_comm,
+               self._receiver_inter_comm,
+               self._sender_inter_comm,
+               self._sender_group_ranks,
+               self._receiver_group_ranks,
+               root_transformer_rank  # root transformer rank
+               )
 
             self.__transformer_communicator = TransformerCommunicator(
                 self.__configurations_manager,
@@ -145,7 +145,7 @@ class TvbNestManager(BaseManager):
                 self.__sci_params
             )
             
-            my_rank =  self._intra_comm.Get_rank()
+            my_rank = self._intra_comm.Get_rank()
            
             # STEP 3) start exchanging the data 
             # Case a, if rank is in group of senders
@@ -154,7 +154,7 @@ class TvbNestManager(BaseManager):
                     # set inter_communicator for sending the data
                     # self._num_receiving = self._sender_inter_comm.Get_remote_size()
                     # self._logger.debug(f"num_receiving:{self._num_receiving}")
-                    response =  self.__nest_communicator.send()
+                    response = self.__nest_communicator.send()
                       
                 elif my_rank in self._receiver_group_ranks:
                     # set inter_communicator for receiving the data
@@ -163,7 +163,7 @@ class TvbNestManager(BaseManager):
                     response = self.__tvb_communicator.receive()
                 
                 elif my_rank in self._transformer_group_ranks:
-                     response = self.__transformer_communicator.transform()
+                    response = self.__transformer_communicator.transform()
                 
             elif self.__direction == DATA_EXCHANGE_DIRECTION.NEST_TO_TVB:
                 if my_rank in self._sender_group_ranks:
@@ -178,13 +178,13 @@ class TvbNestManager(BaseManager):
                     response = self.__nest_communicator.receive()
     
                 elif my_rank in self._transformer_group_ranks:
-                     response = self.__transformer_communicator.transform()
+                    response = self.__transformer_communicator.transform()
 
             # sync up point
-            debug_log_message(self._my_rank,
-                              self._logger,
-                              "wait until all MPI groups conclude their operations")
-            self._intra_comm.Barrier()
+            info_log_message(0,
+                             self._logger,
+                             f"rank: {self._my_rank} - wait until all MPI groups conclude their operations")
+            # self._intra_comm.Barrier()
 
             # test, check received response
             # Case a: something went wrong

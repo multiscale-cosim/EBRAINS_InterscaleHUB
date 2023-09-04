@@ -154,6 +154,7 @@ class NestCommunicator(BaseCommunicator):
             # Case c, simulation is finished
             elif status_nest.Get_tag() == 2:
                 # everything goes fine, terminate the loop and respond with OK
+                self._logger.info('NEST: End of receive function')
                 return Response.OK
                 
             # Case d,  A 'bad' MPI tag is received,
@@ -191,6 +192,7 @@ class NestCommunicator(BaseCommunicator):
                 # send the current simulation staus to transformers
                 if self._intra_comm.Get_rank() == root_sending_rank:
                     self._intra_comm.send(True, dest=self._root_transformer_rank, tag=0)
+
                 # wait to receive transformed data from transformers
                 if self._intra_comm.Get_rank() == root_sending_rank:
                     spike_trains = self._intra_comm.recv(source=self._root_transformer_rank, tag=0, status=status_transformer)
@@ -221,7 +223,6 @@ class NestCommunicator(BaseCommunicator):
                         # iv) send the spike trains
                         data = np.concatenate(data).astype('d')
                         self._sender_inter_comm.Send([data, MPI.DOUBLE], dest=rank, tag=spike_recorder_ids[0])
-
                 # continue next iteration
                 continue
 
@@ -236,6 +237,7 @@ class NestCommunicator(BaseCommunicator):
                 if self._intra_comm.Get_rank() == root_sending_rank:
                     self._intra_comm.send(False, dest=self._root_transformer_rank, tag=0)
                 # everything goes fine, terminate the loop and respond with OK
+                self._logger.info('NEST: End of send function')
                 return Response.OK
             
             # Case d, A 'bad' MPI tag is received,
