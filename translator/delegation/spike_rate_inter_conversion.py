@@ -48,7 +48,7 @@ class SpikeRateConvertor:
                           logger=self.__logger,
                           msg="Initialised")
 
-    def spike_events_to_spiketrains(self, count, spike_events, comm, root_transformer_rank):
+    def spike_events_to_spiketrains(self, count, spike_events, comm, transformers_root_rank):
         """
         get the spike time from the buffer and order them by neurons
         """
@@ -75,9 +75,9 @@ class SpikeRateConvertor:
                 raise
         
         # gather the results on root
-        gathered_spike_trains = comm.gather(partial_spike_trains, root=root_transformer_rank)
+        gathered_spike_trains = comm.gather(partial_spike_trains, root=transformers_root_rank)
         # flatten the nested lists on root
-        if transformer_rank == root_transformer_rank:
+        if transformer_rank == transformers_root_rank:
             spike_trains = gathered_spike_trains[0]
             for rank in range(1, comm.Get_size()):
                 spike_trains += gathered_spike_trains[rank]
@@ -98,7 +98,7 @@ class SpikeRateConvertor:
         times = np.array([count * self.__time_synch, (count + 1) * self.__time_synch], dtype='d')
         return times, rate
 
-    def rate_to_spikes(self, time_step, rates, comm, root_transformer_rank):
+    def rate_to_spikes(self, time_step, rates, comm, transformers_root_rank):
         """
         implements the abstract method for the transformation of the
         rate to spikes.
@@ -120,9 +120,9 @@ class SpikeRateConvertor:
             partial_spike_trains.append(np.around(np.sort(inhomogeneous_poisson_process(signal, as_array=True)), decimals=1))
 
         # gather the results at root_transformer_rank
-        gathered_spike_trains = comm.gather(partial_spike_trains, root=root_transformer_rank)
+        gathered_spike_trains = comm.gather(partial_spike_trains, root=transformers_root_rank)
         # flatten the nested lists on root
-        if transformer_rank == root_transformer_rank:
+        if transformer_rank == transformers_root_rank:
             spike_trains = gathered_spike_trains[0]
             for rank in range(1, comm.Get_size()):
                 spike_trains += gathered_spike_trains[rank]

@@ -83,7 +83,7 @@ class BaseManager(ABC):
         self._interscalehub_buffer = None
         
         # 1.4) class variables
-        self._path = self._parameters['path']
+        # self._path = self._parameters['path']
         self._databuffer_input = None
         self._buffer_size = buffer_size
         # INTER = between applications
@@ -93,8 +93,8 @@ class BaseManager(ABC):
         self._receiver_intra_comm = None
         self._sender_intra_comm = None
         self._transformer_intra_comm = None
-        self._receiver_group_ranks = receiver_group_ranks  # NOTE hardcoded
-        self._sender_group_ranks = sender_group_ranks  # NOTE hardcoded
+        self._receiver_group_ranks = receiver_group_ranks
+        self._sender_group_ranks = sender_group_ranks
         # NOTE all remaining ranks are transformers
         self._transformer_group_ranks = [x for x in range(self._intra_comm.Get_size())
                                          if x not in (self._receiver_group_ranks + self._sender_group_ranks) ]
@@ -124,7 +124,7 @@ class BaseManager(ABC):
         # received from simulators
         if self._receiver_intra_comm and self._intra_comm.Get_rank() == self._receiver_group_ranks[0]:
             self._set_buffer_state(state=DATA_BUFFER_STATES.READY_TO_RECEIVE,
-                                           buffer_type=DATA_BUFFER_TYPES.INPUT)
+                                   buffer_type=DATA_BUFFER_TYPES.INPUT)
         # sync up point so that initial state of the INPUT buffer could be set
         debug_log_message(self._root,
                           self._logger,
@@ -142,22 +142,25 @@ class BaseManager(ABC):
     def _set_buffer_state(self, state, buffer_type):
         """helper function to set the buffer state for the given buffer_type"""
         self._data_buffer_manager.set_ready_state_at(index=-1,
-                                                              state=state,
-                                                              buffer_type=buffer_type)
+                                                     state=state,
+                                                     buffer_type=buffer_type)
 
     def _setup_mpi_groups_and_comms(self):
         """
             helper function to group mpi processes based on their functionality
         """
+        # Case a, rank belongs to receivers group
         if self._intra_comm.Get_rank() == self._receiver_group_ranks[0]:  
             self._receiver_intra_comm = self._setup_mpi_groups_including_ranks(self._receiver_group_ranks)
 
-        elif self._intra_comm.Get_rank() == self._sender_group_ranks[0]:
+        # Case b, two way communication and rank belongs to senders group
+        elif self._sender_group_ranks and self._intra_comm.Get_rank() == self._sender_group_ranks[0]:
             self._sender_intra_comm = self._setup_mpi_groups_including_ranks(self._sender_group_ranks)
 
+        # Case c, rank belongs to transformers group
         elif self._intra_comm.Get_rank() in self._transformer_group_ranks:
             self._transformer_intra_comm = self._setup_mpi_groups_including_ranks(self._transformer_group_ranks)
-    
+
     def _get_mpi_shared_memory_buffer(self, buffer_size, comm, buffer_type):
         """
         Creates shared memory buffer for MPI One-sided-Communication.
@@ -196,6 +199,7 @@ class BaseManager(ABC):
             self._sender_inter_comm, self._output_port = self._intercomm_manager.open_port_accept_connection(
                 direction=DATA_EXCHANGE_DIRECTION(self._direction).name,
                 intercomm_type=INTERCOMM_TYPE.SENDER.name)
+            print(f"\n\n Sender intra comm created")
             # self._receiver_inter_comm = None
     
     def _setup_mpi_groups_excluding_ranks(self, ranks_to_exclude):
@@ -222,8 +226,8 @@ class BaseManager(ABC):
     
     def _setup_mpi_groups_including_ranks(self, ranks_to_include):
         """ 
-            creates an MPI group communicator by reordering an existing group and taking
-            only listed members
+            creates an MPI group communicator by reordering an existing group
+            and taking only listed members
 
             Parameters
             ----------

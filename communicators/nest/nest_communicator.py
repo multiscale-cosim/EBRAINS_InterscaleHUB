@@ -81,37 +81,56 @@ class NestCommunicator(BaseCommunicator):
         # everything went well
         return status_nest
     
+    def __send_simulation_status_to_transformers(self,
+                                                 root_rank,
+                                                 is_simulation_running):
+        """sends the current simulation staus to transformers"""
+        if self._intra_comm.Get_rank() == root_rank:
+            self._intra_comm.send(is_simulation_running,
+                                  dest=self._root_transformer_rank,
+                                  tag=0)
+    
     def receive(self):
         '''
-            Receives data from NEST on rank 0 and puts it into the INPUT buffer.
+            Receives data from NEST on rank 0 and puts it into the INPUT buffer
         '''
-        # NOTE The last two buffer indices are used for setting up buffer states
-        # and last index of data received (i.e. size of data)
+        # NOTE The last two buffer indices are used for setting up buffer
+        # states and last index of data received (i.e. size of data)
         self._num_sending = self._receiver_inter_comm.Get_remote_size()
+        root_receiving_rank = self._group_of_ranks_for_receiving[0]
         size = np.empty(1, dtype='i')    
         status_nest = MPI.Status()
         self._logger.info("start receiving from NEST")
         while True:
             raw_data_end_index = 0  # head of the buffer, reset after each iteration
-            status_nest = self.__check_nest_status(self._receiver_inter_comm, self._num_sending, status_nest)
+            status_nest = self.__check_nest_status(self._receiver_inter_comm,
+                                                   self._num_sending,
+                                                   status_nest)
             if status_nest == Response.ERROR:
                 # something went wrong
                 # NOTE a specific exception is already logged with traceback
                 # return with ERROR to terminate
                 return Response.ERROR
-            
+
             # Test, check the current status of simulation
             # Case a, simulaiton is still running
             if status_nest.Get_tag() == 0:
+                # Case one-way communication i.e. only receiving from simulator
+                if not self._group_of_ranks_for_sending:
+                    # send the current simulation staus to transformers
+                    self.__send_simulation_status_to_transformers(
+                        root_rank=root_receiving_rank,
+                        is_simulation_running=True)
                 # NOTE consider using MPI, remove the sleep and refactor
                 # while loop to something more efficient
 
                 # wait until Transformer communciator set the buffer state
                 while self._data_buffer_manager.get_at(
-                    index=-1, buffer_type=DATA_BUFFER_TYPES.INPUT) != DATA_BUFFER_STATES.READY_TO_RECEIVE:
+                    index=-1,
+                    buffer_type=DATA_BUFFER_TYPES.INPUT) != DATA_BUFFER_STATES.READY_TO_RECEIVE:
                     time.sleep(0.001)
                     continue
-                
+
                 # Recevie the data from all NEST ranks
 
                 # NOTE the following 3 MPI calls are matching the protocol of
@@ -127,9 +146,9 @@ class NestCommunicator(BaseCommunicator):
                                     buffer_type=DATA_BUFFER_TYPES.INPUT)
                     # iii) receive the data in the buffer
                     self._receiver_inter_comm.Recv([data_buffer, MPI.DOUBLE],
-                                              source=source,
-                                              tag=0,
-                                              status=status_nest)
+                                                   source=source,
+                                                   tag=0,
+                                                   status=status_nest)
                     # move index
                     raw_data_end_index += size[0]
                 
@@ -153,12 +172,29 @@ class NestCommunicator(BaseCommunicator):
 
             # Case c, simulation is finished
             elif status_nest.Get_tag() == 2:
-                # everything goes fine, terminate the loop and respond with OK
+                # everything goes fine
                 self._logger.info('NEST: End of receive function')
+                # Case one-way communication i.e. only receiving from simulator
+                if not self._group_of_ranks_for_sending:
+                    # send the current simulation staus to transformers
+                    # if self._intra_comm.Get_rank() == root_receiving_rank:
+                    #     self._intra_comm.send(False, dest=self._root_transformer_rank, tag=0)
+                    self.__send_simulation_status_to_transformers(
+                        root_rank=root_receiving_rank,
+                        is_simulation_running=False)
+                
+                # terminate the loop and respond with OK
                 return Response.OK
                 
             # Case d,  A 'bad' MPI tag is received,
             else:
+                # Case one-way communication i.e. only receiving from simulator
+                if not self._group_of_ranks_for_sending:
+                    # send the current simulation staus to transformers
+                    self.__send_simulation_status_to_transformers(
+                        root_rank=root_receiving_rank,
+                        is_simulation_running=False)
+                
                 # log the exception with traceback
                 interscalehub_utils.log_exception(
                     log_message="bad mpi tag :",
@@ -173,13 +209,14 @@ class NestCommunicator(BaseCommunicator):
         # NOTE Refactoring is needed to have multiple MPI ranks possible
         self._num_receiving = self._sender_inter_comm.Get_remote_size()
         root_sending_rank = self._group_of_ranks_for_sending[0]
-        check = np.empty(1,dtype='b')
         num_spike_recorders = np.empty(1, dtype='i')
         status_nest = MPI.Status()
         status_transformer = MPI.Status()
         self._logger.info("start sending data to NEST")
         while True:
-            status_nest = self.__check_nest_status(self._sender_inter_comm, self._num_receiving, status_nest)
+            status_nest = self.__check_nest_status(self._sender_inter_comm,
+                                                   self._num_receiving,
+                                                   status_nest)
             if status_nest == Response.ERROR:
                 # something went wrong
                 # NOTE a specific exception is already logged with traceback
@@ -190,8 +227,9 @@ class NestCommunicator(BaseCommunicator):
             # Case a, simualtion is still running
             if status_nest.Get_tag() == 0:
                 # send the current simulation staus to transformers
-                if self._intra_comm.Get_rank() == root_sending_rank:
-                    self._intra_comm.send(True, dest=self._root_transformer_rank, tag=0)
+                self.__send_simulation_status_to_transformers(
+                    root_rank=root_sending_rank,
+                    is_simulation_running=True)
 
                 # wait to receive transformed data from transformers
                 if self._intra_comm.Get_rank() == root_sending_rank:
@@ -234,8 +272,9 @@ class NestCommunicator(BaseCommunicator):
             # Case c, simulaiton is finished
             elif status_nest.Get_tag() == 2:
                 # send the current simulation staus to transformers
-                if self._intra_comm.Get_rank() == root_sending_rank:
-                    self._intra_comm.send(False, dest=self._root_transformer_rank, tag=0)
+                self.__send_simulation_status_to_transformers(
+                    root_rank=root_sending_rank,
+                    is_simulation_running=False)
                 # everything goes fine, terminate the loop and respond with OK
                 self._logger.info('NEST: End of send function')
                 return Response.OK
@@ -243,8 +282,9 @@ class NestCommunicator(BaseCommunicator):
             # Case d, A 'bad' MPI tag is received,
             else:
                 # send the current simulation staus to transformers
-                if self._intra_comm.Get_rank() == root_sending_rank:
-                    self._intra_comm.send(False, dest=self._root_transformer_rank, tag=0)
+                self.__send_simulation_status_to_transformers(
+                    root_rank=root_sending_rank,
+                    is_simulation_running=False)
                 # log the exception with traceback
                 interscalehub_utils.log_exception(
                     logger=self._logger,

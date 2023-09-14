@@ -56,6 +56,7 @@ class TvbNestManager(BaseManager):
         self.__sci_params = Xml2ClassParser(sci_params_xml_path_filename, self.__logger)
         self.__direction = direction
         buffer_size = None
+        self.__translation_function = None
 
         # TODO get these settings via XML configurations file
         # NOTE Refactoring of communication protocols and data management is
@@ -139,10 +140,11 @@ class TvbNestManager(BaseManager):
                 self._sender_group_ranks,
                 self._receiver_group_ranks,
                 self._transformer_group_ranks,
-                self.__translation_function_id,
                 self._data_buffer_manager,
                 self.__parameters,
-                self.__sci_params
+                self.__sci_params,
+                self.__translation_function_id,
+                self.__translation_function
             )
             
             my_rank = self._intra_comm.Get_rank()

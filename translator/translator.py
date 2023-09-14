@@ -45,19 +45,27 @@ class Translator:
     
     def translate(self,
                   translation_function_id,
+                  translation_function,
                   count,
                   raw_data,
                   transformer_intra_comm,
-                  translated_root_rank,
+                  transformers_root_rank,
                   *args):
         
         if translation_function_id == TRANSLATION_FUNCTION_ID.SPIKE_TO_RATES:
             return self._spikes_to_rates(count, raw_data, transformer_intra_comm,
-                                        translated_root_rank)
+                                        transformers_root_rank)
         
-        elif translation_function_id == TRANSLATION_FUNCTION_ID.RATE_TO_SPIKES:
+        if translation_function_id == TRANSLATION_FUNCTION_ID.RATE_TO_SPIKES:
             return self._rate_to_spikes(raw_data, transformer_intra_comm,
-                                       translated_root_rank)
+                                       transformers_root_rank)
+        
+        if translation_function_id == TRANSLATION_FUNCTION_ID.USER_LAND:
+            # translation function is defined in dir
+            # /userland/translation_funcitons/...
+            return translation_function(raw_data,
+                                        transformer_intra_comm,
+                                        transformers_root_rank)
     
     def _spikes_to_rates(self, count, data, comm, root_transformer_rank):
         """
@@ -105,7 +113,7 @@ class Translator:
         # 3) convert the spike_trains to rate
         # NOTE only root rank has the result (spike_trains)
         times = None
-        rate  = None
+        rate = None
         if comm.Get_rank() == root_transformer_rank:
             times, rate = self.__elephant_delegator.spiketrains_to_rate(count, spike_trains)
         # wait until root rank is done with analysis
@@ -116,7 +124,7 @@ class Translator:
         comm.Barrier()
         return times, rate
 
-    def _rate_to_spikes(self, raw_data, transformer_intra_comm, translated_root_rank):
+    def _rate_to_spikes(self, raw_data, transformer_intra_comm, transformers_root_rank):
         """Transforms the data from one format to another .
         
         Parameters
@@ -137,4 +145,4 @@ class Translator:
         return self.__elephant_delegator.rate_to_spikes(time_step,
                                                         rates,
                                                         transformer_intra_comm,
-                                                        translated_root_rank)
+                                                        transformers_root_rank)
