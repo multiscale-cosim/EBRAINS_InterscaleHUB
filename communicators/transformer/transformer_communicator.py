@@ -173,7 +173,7 @@ class TransformerCommunicator:
             # Case b, simulation is finished
             else:
                 # terminate the loop and respond with OK
-                info_log_message(0,
+                info_log_message(self._transformer_intra_comm.Get_rank(),
                                  self._logger,
                                  'concluding transformation')
                 return Response.OK

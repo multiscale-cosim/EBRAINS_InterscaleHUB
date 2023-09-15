@@ -182,23 +182,20 @@ class TvbNestManager(BaseManager):
                 elif my_rank in self._transformer_group_ranks:
                     response = self.__transformer_communicator.transform()
 
-            # sync up point
-            info_log_message(0,
-                             self._logger,
-                             f"rank: {self._my_rank} - wait until all MPI groups conclude their operations")
-            # self._intra_comm.Barrier()
+            # finish with execution
+            debug_log_message(
+                0,
+                self._logger,
+                f"rank: {self._my_rank} - conluding the data exchange")
 
-            # test, check received response
-            # Case a: something went wrong
-            if response == Response.ERROR:
-                # NOTE TODO signal other MPI groups to quit forcefully if
-                # ERROR is received as response
-                
-                return Response.ERROR
+            # TODO add functionality to act accordingly when response is ERROR
+            # For example, consider signalling other MPI groups somehow to quit
+            # forcefully if ERROR is received as a response
+            
+            # send the response that is received from the data exchange
+            # operation
+            return response
 
-            # Case b: everything went well
-            else:
-                return Response.OK
                 
     def stop(self):
         """Closes the data channels"""
