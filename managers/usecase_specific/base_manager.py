@@ -218,7 +218,7 @@ class BaseManager(ABC):
         # of the gorup
         mpi_group = self._intra_comm.group.Excl(ranks_to_exclude)
         group_comm = self._intra_comm.Create_group(mpi_group)
-        info_log_message(self._my_rank,
+        debug_log_message(0,
                          self._logger,
                          msg=f"MPI group created with size: {group_comm.Get_size()}, "
                          f"ranks: {ranks_to_exclude}")
