@@ -172,17 +172,15 @@ class NestCommunicator(BaseCommunicator):
 
             # Case c, simulation is finished
             elif status_nest.Get_tag() == 2:
-                # everything goes fine
-                self._logger.info('NEST: End of receive function')
                 # Case one-way communication i.e. only receiving from simulator
                 if not self._group_of_ranks_for_sending:
                     # send the current simulation staus to transformers
-                    # if self._intra_comm.Get_rank() == root_receiving_rank:
-                    #     self._intra_comm.send(False, dest=self._root_transformer_rank, tag=0)
                     self.__send_simulation_status_to_transformers(
                         root_rank=root_receiving_rank,
                         is_simulation_running=False)
-                
+
+                # everything goes fine
+                self._logger.info('NEST: End of receive function')
                 # terminate the loop and respond with OK
                 return Response.OK
                 
